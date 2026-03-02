@@ -17,13 +17,17 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * Service for JWT token generation and validation
+ */
 @Service
 @RequiredArgsConstructor
 public class JwtService {
 
+    private final JwtProperties jwtProperties;
+
     private SecretKey getSigningKey() {
-        String secretKey = "MIsMiHz45ATNS6elM6dQLfN6oQIBDSV+KbAc5PE3rlA=";
-        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(jwtProperties.getSecret());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
@@ -40,37 +44,25 @@ public class JwtService {
                 .compact();
     }
 
+    /**
+     * Generate access token for user authentication
+     */
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
-        claims.put("type", "access_token"); // Token type identifier
+        claims.put("type", "access_token");
 
-        // Add user roles to access token
-        /*
-         * Trường hợp KHÔNG nên đưa roles vào JWT:
-         * Bảo mật cao: Roles có thể thay đổi thường xuyên, nếu để trong JWT thì phải
-         * chờ token hết hạn mới cập nhật được.
-         * Roles phức tạp: Nếu roles có nhiều thông tin chi tiết, JWT sẽ trở nên lớn.
-         * Quản lý tập trung: Muốn kiểm soát quyền truy cập real-time từ database.
-         * Trường hợp NÊN đưa roles vào JWT:
-         * Performance: Tránh query database mỗi request để lấy roles.
-         * Stateless: Hoàn toàn không phụ thuộc vào database cho việc xác thực.
-         * Microservices: Các service khác có thể đọc roles từ JWT mà không cần gọi user
-         * service.
-         */
-        // List<Map<String, Object>> roles = user.getRoles().stream()
-        // .map(role -> {
-        // Map<String, Object> roleMap = new HashMap<>();
-        // roleMap.put("id", role.getId());
-        // roleMap.put("name", role.getName());
-        // return roleMap;
-        // })
-        // .collect(Collectors.toList());
+        return createToken(claims, user.getEmail(), jwtProperties.getAccessTokenExpiration());
+    }
 
-        // claims.put("roles", roles);
-
-        long jwtExpiration = 86400000;
-        return createToken(claims, user.getUsername(), jwtExpiration);
+    /**
+     * Generate refresh token for obtaining new access tokens
+     */
+    public String generateRefreshToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", user.getId());
+        claims.put("type", "refresh_token");
+        return createToken(claims, user.getEmail(), jwtProperties.getRefreshTokenExpiration());
     }
 
     private Claims extractAllClaims(String token) {
@@ -102,11 +94,26 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 
+    /**
+     * Validate access token
+     */
     public Boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         final String tokenType = extractTokenType(token);
         return (username.equals(userDetails.getUsername()))
                 && !isTokenExpired(token)
-                && "access_token".equals(tokenType); // Only access tokens for authentication
+                && "access_token".equals(tokenType);
+    }
+
+    /**
+     * Validate refresh token
+     */
+    public Boolean isRefreshTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        final String tokenType = extractTokenType(token);
+
+        return (username.equals(userDetails.getUsername()))
+                && !isTokenExpired(token)
+                && "refresh_token".equals(tokenType);
     }
 }

@@ -1,13 +1,19 @@
 package com.example.backend_Ecom.dto;
 
-import lombok.Getter;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Email;
 
-
-@Getter
+@Schema(description = "DTO for register request")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RegisterRequestDto {
 
+    @Email(message = "Email must be valid")
     @NotBlank(message = "Email cannot be empty")
     private String email;
 
@@ -17,11 +23,7 @@ public class RegisterRequestDto {
     @NotBlank(message = "Password cannot be empty")
     private String password;
 
-    @NotBlank(message = "Số điện thoại không được để trống")
-    @Pattern( regexp = "\\d{10}", message = "Số điện thoại không hợp lệ ")
+    @NotBlank(message = "Phone number cannot be empty")
+    @Pattern(regexp = "\\d{10}", message = "Phone number must be exactly 10 digits")
     private String phoneNumber;
-
-
-    // muốn hiện được các anotation này : như @NotBlank hoặc @Pattern ... thì phải có @Valid ở file controller và nếu chỉ có thể thì khi test ở postman nó sẽ trả về 
-    //  dữ liệu chưa được định dạngg kiểu dài dòng nên cần phải cấu hình ở file GlobalExceptionHandler khi nó tra về 400 thì in ra lỗi chi tiết hơn để dễ debug hơn
 }

@@ -1,19 +1,21 @@
 package com.example.backend_Ecom.dto;
 
-import com.example.backend_Ecom.entity.Role;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
 
+import lombok.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Getter
-@Setter
+@Schema(description = "DTO for login response")
+@Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginResponseDto {
     Long id;
     String username;
     List<String> roles;
     String accessToken;
+    String refreshToken;
+
 
 }

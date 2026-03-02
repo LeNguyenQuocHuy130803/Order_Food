@@ -9,10 +9,11 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
 
+/**
+ * Custom entry point for handling authentication failures (401 Unauthorized)
+ */
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
@@ -25,13 +26,14 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
-        // Create a custom error response for 401 Unauthorized
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("status", 401);
-        errorResponse.put("error", "Unauthorized");
-        errorResponse.put("messages", List.of("Authentication required: Please provide a valid access token"));
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(401)
+                .code("UNAUTHORIZED")
+                .message("Authentication required: Please provide a valid access token")
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
 
-        // Write JSON response
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }

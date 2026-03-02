@@ -12,7 +12,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import com.example.backend_Ecom.repository.UserJpaRepository;
 
-
+/**
+ * Custom UserDetailsService for loading user details from database
+ */
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
@@ -23,21 +25,18 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
         List<GrantedAuthority> authorities = new ArrayList<>();
         user.getRoles().forEach(role -> {
-            // Nếu dùng @PreAuthorize("hasAuthority('Administrators')") thì
             authorities.add(new SimpleGrantedAuthority(role.getName()));
-
-            // Nếu dùng @PreAuthorize("hasRole('Administrators')") thì authorities.add(new
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getName()));
         });
 
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
+                .username(user.getEmail())
                 .password(user.getPassword())
                 .authorities(authorities)
                 .build();

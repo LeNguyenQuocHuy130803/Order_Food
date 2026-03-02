@@ -5,16 +5,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
 
+/**
+ * Custom handler for access denied exceptions (403 Forbidden)
+ */
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
@@ -27,25 +26,14 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
 
-        // Create custom error response
-        Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("status", 403);
-        errorResponse.put("error", "Forbidden");
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(403)
+                .code("FORBIDDEN")
+                .message("Access denied: Insufficient privileges to access this resource")
+                .path(request.getRequestURI())
+                .timestamp(LocalDateTime.now())
+                .build();
 
-        // Determine the appropriate message based on authentication status
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String message;
-
-        if (authentication == null || !authentication.isAuthenticated() ||
-                "anonymousUser".equals(authentication.getPrincipal())) {
-            message = "Access denied: Authentication required";
-        } else {
-            message = "Access denied: Insufficient privileges to access this resource";
-        }
-
-        errorResponse.put("messages", List.of(message));
-
-        // Write JSON response
         response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
     }
 }
