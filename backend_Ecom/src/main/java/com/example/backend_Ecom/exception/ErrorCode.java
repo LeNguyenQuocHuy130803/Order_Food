@@ -14,6 +14,7 @@ public enum ErrorCode {
     UNAUTHORIZED(401, "UNAUTHORIZED", "Authentication required"),
     FORBIDDEN(403, "FORBIDDEN", "Access denied"),
     INVALID_CREDENTIALS(401, "INVALID_CREDENTIALS", "Invalid email or password"),
+    ACCOUNT_LOCKED(401, "ACCOUNT_LOCKED", "Account is locked due to multiple failed login attempts. Please try again later."),
     TOKEN_EXPIRED(401, "TOKEN_EXPIRED", "Token has expired"),
     INVALID_TOKEN(401, "INVALID_TOKEN", "Invalid or malformed token"),
     

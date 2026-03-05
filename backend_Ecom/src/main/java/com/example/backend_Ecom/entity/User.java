@@ -43,4 +43,16 @@ public class User {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    // Account Lockout Fields for Brute Force Protection
+    @Column(name = "failed_login_attempts", nullable = false)
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "lockout_time")
+    private LocalDateTime lockoutTime;
+
+    @Column(name = "is_account_locked", nullable = false)
+    @Builder.Default
+    private Boolean isAccountLocked = false;
 }

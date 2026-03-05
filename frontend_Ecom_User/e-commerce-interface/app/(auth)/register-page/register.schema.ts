@@ -1,13 +1,9 @@
-/**
- * Register Form Validation Schema
- * Using Yup for validation rules
- */
 
 import * as yup from 'yup'
 
 const phoneRegex = /^(\+84|0)[0-9]{9,10}$/
 
-export const registerValidationSchema = yup.object({
+export const schemaRegister = yup.object({
   email: yup
     .string()
     .required('Please enter your email')
@@ -45,4 +41,4 @@ export const registerValidationSchema = yup.object({
     .oneOf([true], 'Please agree to the terms of service'),
 })
 
-export type RegisterFormData = yup.InferType<typeof registerValidationSchema>
+export type RegisterFormData = yup.InferType<typeof schemaRegister>

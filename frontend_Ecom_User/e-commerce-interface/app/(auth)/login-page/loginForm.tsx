@@ -1,12 +1,17 @@
-import { useLogin } from '@/hooks/useLogin'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { loginValidationSchema, type LoginFormData } from './login.schema'
+import { SchemaLogin, type LoginFormData } from './login.schema'
 import { FaGoogle, FaGithub } from 'react-icons/fa'
-import { useEffect } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 
 export default function LoginForm() {
-  const { loading, error, success, handleLogin, clearError } = useLogin()
+    const router = useRouter()
+    const [showPassword, setShowPassword] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [success, setSuccess] = useState(false)
 
   const {
     register,
@@ -14,19 +19,68 @@ export default function LoginForm() {
     formState: { errors },
     reset,
   } = useForm<LoginFormData>({
-    resolver: yupResolver(loginValidationSchema),
-    mode: 'onBlur',
+    resolver: yupResolver(SchemaLogin),
   })
 
-  const onSubmit = async (data: LoginFormData) => {
-    clearError()
-    await handleLogin({
-      email: data.email,
-      password: data.password,
-    })
+  const onSubmit = async (values: LoginFormData) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const res = await signIn('credentials', {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      })
+
+      // ✅ Check if error occurred
+      if (res?.error) {
+        setError(res.error)
+      } else {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push('/dashboard-employers')
+        }, 2000)
+      }
+    } catch (err: any) {
+      setError(err.message || 'Login failed, please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
+  /**
+   * để sau xử lí với login gg
+   * const handleSuccess = async (credentialResponse: any) => {
+    try {
+      const { credential } = credentialResponse;
 
+      const res = await signIn("credentials", {
+        credential: credential,
+        redirect: false,
+      });
+
+      if (!res?.error) {
+        setMessageState({
+          type: "success",
+          content: "Google login successful!",
+        });
+        // useEffect sẽ xử lý redirect
+      } else {
+        setMessageState({ type: "error", content: res.error });
+      }
+    } catch (error: any) {
+      setMessageState({
+        type: "error",
+        content: error?.message || "Google login failed. Please try again.",
+      });
+    }
+  };
+
+  const handleError = () => {
+    console.log("Login Failed");
+  };
+   */
   return (
     <div className="w-full max-w-md">
       {/* Card Container */}

@@ -1,15 +1,19 @@
 'use client'
 
-import { useRegister } from '@/hooks/useRegister'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { registerValidationSchema, type RegisterFormData } from './register.schema'
-import { useState, useEffect } from 'react'
+import { schemaRegister, type RegisterFormData } from './register.schema'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { FaGoogle, FaGithub } from 'react-icons/fa'
+import { registerUser } from '@/service/RegisterService'
 
 export default function RegisterForm() {
-  const { loading, error, success, handleRegister, clearError } = useRegister()
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const {
     register,
@@ -17,20 +21,45 @@ export default function RegisterForm() {
     formState: { errors },
     reset,
   } = useForm<RegisterFormData>({
-    resolver: yupResolver(registerValidationSchema),
-    mode: 'onBlur',
+    resolver: yupResolver(schemaRegister),
+    defaultValues: {
+      email: '',
+      userName: '',
+      password: '',
+      confirmPassword: '',
+      phoneNumber: '',
+      agreeTerms: false,
+    },
   })
 
-  const onSubmit = async (data: RegisterFormData) => {
-    clearError()
-    await handleRegister({
-      email: data.email,
-      userName: data.userName,
-      password: data.password,
-      phoneNumber: data.phoneNumber,
-    })
-  }
+  // ✅ Handle form submission
+  const onSubmit = async (values: RegisterFormData) => {
+    try {
+      setLoading(true)
+      setError(null)
 
+      // ✅ Call RegisterService with only required fields
+      const result = await registerUser({
+        email: values.email,
+        userName: values.userName,
+        password: values.password,
+        phoneNumber: values.phoneNumber,
+      })
+
+      // ✅ Show success message
+      setSuccess(true)
+
+
+      // ✅ Redirect to dashboard after 2 seconds
+      setTimeout(() => {
+        router.push('/dashboard-employers')
+      }, 2000)
+    } catch (err: any) {
+      setError(err.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="w-full max-w-md">

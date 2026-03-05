@@ -13,6 +13,7 @@ import java.util.List;
 public class LoginResponseDto {
     Long id;
     String username;
+    String email;
     List<String> roles;
     String accessToken;
     String refreshToken;

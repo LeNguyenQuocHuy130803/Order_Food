@@ -45,23 +45,30 @@ public class JwtService {
     }
 
     /**
-     * Generate access token for user authentication
+     * Generate access token for user authentication  ; tạo ra access token để xác thực người dùng
      */
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
         claims.put("type", "access_token");
 
+        //  cách cũ lấy time tại file 
+    // long jwtExpiration = 7 * 24 * 60 * 60 * 1000; // 7 days
+    // return createToken(claims, user.getEmail(), jwtExpiration);
+
+    //  cách mới lấy time để access token hoạt động từ file application.properties 
         return createToken(claims, user.getEmail(), jwtProperties.getAccessTokenExpiration());
     }
 
     /**
-     * Generate refresh token for obtaining new access tokens
+     * Generate refresh token for obtaining new access tokens  : tạo ra refresh token để lấy access token mới khi access token cũ hết hạn
      */
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", user.getId());
         claims.put("type", "refresh_token");
+
+        //  tường tự như access token, lấy time tại file application.properties 
         return createToken(claims, user.getEmail(), jwtProperties.getRefreshTokenExpiration());
     }
 
