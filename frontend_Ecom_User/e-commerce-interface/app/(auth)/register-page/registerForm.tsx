@@ -5,12 +5,13 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { schemaRegister, type RegisterFormData } from './register.schema'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { FaGoogle, FaGithub } from 'react-icons/fa'
+import { FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { registerUser } from '@/service/RegisterService'
 
 export default function RegisterForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -105,11 +106,10 @@ export default function RegisterForm() {
               placeholder="Enter your email"
               disabled={loading}
               {...register('email')}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${
-                errors.email
+              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${errors.email
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
-              }`}
+                }`}
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -130,11 +130,10 @@ export default function RegisterForm() {
               placeholder="Enter your username"
               disabled={loading}
               {...register('userName')}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${
-                errors.userName
+              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${errors.userName
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
-              }`}
+                }`}
             />
             {errors.userName && (
               <p className="mt-1 text-sm text-red-600">
@@ -157,11 +156,10 @@ export default function RegisterForm() {
               placeholder="0912345678"
               disabled={loading}
               {...register('phoneNumber')}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${
-                errors.phoneNumber
+              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${errors.phoneNumber
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
-              }`}
+                }`}
             />
             {errors.phoneNumber && (
               <p className="mt-1 text-sm text-red-600">
@@ -185,18 +183,17 @@ export default function RegisterForm() {
                 placeholder="Enter your password"
                 disabled={loading}
                 {...register('password')}
-                className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${
-                  errors.password
+                className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${errors.password
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300 focus:ring-blue-500'
-                }`}
+                  }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
               >
-                {showPassword ? '👁️' : '👁️‍🗨️'}
+                {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
               </button>
             </div>
             {errors.password && (
@@ -217,18 +214,26 @@ export default function RegisterForm() {
             >
               Confirm Password
             </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              disabled={loading}
-              {...register('confirmPassword')}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${
-                errors.confirmPassword
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              }`}
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                placeholder="Confirm your password"
+                disabled={loading}
+                {...register('confirmPassword')}
+                className={`w-full px-4 py-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed text-black ${errors.confirmPassword
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
+              >
+                {showConfirmPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <p className="mt-1 text-sm text-red-600">
                 {errors.confirmPassword.message}

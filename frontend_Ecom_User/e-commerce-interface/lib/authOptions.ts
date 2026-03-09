@@ -4,6 +4,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
 import { API_URL } from '@/service/Constant';
+import { log } from 'console';
 
 interface UserType {
   id: string;
@@ -26,7 +27,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email', placeholder: 'your@email.com' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials) {   // chạy và thông tin được hiển thị ở terminal 
         //  ✅ Gọi API Route /api/auth/login (không gọi backend trực tiếp)
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Email and password required')
@@ -42,7 +43,12 @@ export const authOptions: NextAuthOptions = {
             }),
           })
 
+          console.log( "📡 API Response:", res);
+
           const data = await res.json()
+          
+          console.log( "du lieu la " , data );
+          
 
           if (!res.ok) {
             throw new Error(data.message || 'Login failed')

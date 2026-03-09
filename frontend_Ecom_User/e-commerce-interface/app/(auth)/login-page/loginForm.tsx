@@ -1,17 +1,17 @@
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { SchemaLogin, type LoginFormData } from './login.schema'
-import { FaGoogle, FaGithub } from 'react-icons/fa'
+import { FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 
 export default function LoginForm() {
-    const router = useRouter()
-    const [showPassword, setShowPassword] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [success, setSuccess] = useState(false)
+  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const {
     register,
@@ -117,7 +117,7 @@ export default function LoginForm() {
               htmlFor="email"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
-                 Email
+              Email
             </label>
             <input
               id="email"
@@ -125,11 +125,10 @@ export default function LoginForm() {
               placeholder="Enter your email"
               disabled={loading}
               {...register('email')}
-              className={`w-full px-4 py-3 bg-gray-50  text-black border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                errors.email
+              className={`w-full px-4 py-3 bg-gray-50  text-black border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed ${errors.email
                   ? 'border-red-500 focus:ring-red-500'
                   : 'border-gray-300 focus:ring-blue-500'
-              }`}
+                }`}
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600">
@@ -146,18 +145,26 @@ export default function LoginForm() {
             >
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              disabled={loading}
-              {...register('password')}
-              className={`w-full px-4 py-3  bg-gray-50 text-black border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed ${
-                errors.password
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
-              }`}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                disabled={loading}
+                {...register('password')}
+                className={`w-full px-4 py-3  bg-gray-50 text-black border rounded-lg focus:outline-none focus:ring-2 focus:bg-white transition disabled:opacity-50 disabled:cursor-not-allowed ${errors.password
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-gray-600 hover:text-gray-800"
+              >
+                {showPassword ? <FaEye size={18} /> : <FaEyeSlash size={18} />}
+              </button>
+            </div>
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">
                 {errors.password.message}
@@ -237,7 +244,7 @@ export default function LoginForm() {
         {/* Register Link */}
         <div className="mt-6 text-center border-t border-gray-200 pt-6">
           <p className="text-gray-600">
-           Don't have an account yet?{' '}
+            Don't have an account yet?{' '}
             <a
               href="/register-page"
               className="text-blue-600 hover:text-blue-800 font-semibold transition"
