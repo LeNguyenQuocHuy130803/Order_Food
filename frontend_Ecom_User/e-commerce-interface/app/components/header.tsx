@@ -4,13 +4,17 @@ import { useState } from "react"
 import Link from "next/link"
 import { Menu, X, ShoppingCart, Search, Phone, Mail, MapPin, Clock, ChevronDown, User } from "lucide-react"
 import { Button } from "../components/ui/button"
+import { SearchFilter } from "./search_filter"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [cartCount] = useState(2)
+  const [showSearch, setShowSearch] = useState(false)
 
   return (
     <header className="w-full relative">
+      <SearchFilter showSearch={showSearch} setShowSearch={setShowSearch} />
+      
       {/* Main Header */}
       <div className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
         <div className="container mx-auto px-4">
@@ -32,17 +36,16 @@ export function Header() {
               <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors flex items-center gap-1">
                 Home
               </Link>
-              <div className="relative group">
-                <button className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors flex items-center gap-1">
-                  Menu <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Burgers</Link>
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Pizza</Link>
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Chicken</Link>
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Drinks</Link>
-                </div>
-              </div>
+              <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+                Food
+              </Link>
+              <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+                Fresh
+              </Link>
+              <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+                Drink
+              </Link>
+
               <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 About
               </Link>
@@ -65,11 +68,17 @@ export function Header() {
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-4">
-              <button className="hidden md:flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f5] hover:bg-[#ff5528] hover:text-white transition-colors">
+            <div className="flex items-center gap-1 pr-10">
+              <button 
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors" 
+                onClick={() => setShowSearch(!showSearch)}
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <Link href="/login-page" className="hidden md:flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f5] hover:bg-[#ff5528] hover:text-white transition-colors">
                 <User className="w-5 h-5" />
                 <span className="text-sm font-semibold">Đăng nhập</span>
-              </button>
+              </Link>
               <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#ff5528] text-white">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
