@@ -59,7 +59,7 @@ export function Header() {
               <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Blog
               </Link>
-              <Link href="#contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+              <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Contact
               </Link>
             </nav>
