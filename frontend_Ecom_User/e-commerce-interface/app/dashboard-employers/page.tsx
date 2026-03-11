@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Footer } from '../components/footer'
 import { SearchFilter } from '../components/search_filter'
@@ -10,6 +11,7 @@ type Props = {}
 
 export default function page({}: Props) {
   const { user, logout, isAuthenticated } = useAuth()
+  const [showSearch, setShowSearch] = useState(false)
 
   return (
     // <div>
@@ -57,7 +59,7 @@ export default function page({}: Props) {
 
     <main className="bg-background min-h-screen">
       <Header />
-      <SearchFilter />
+      <SearchFilter showSearch={showSearch} setShowSearch={setShowSearch} />
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex flex-col lg:flex-row gap-8">

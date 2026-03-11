@@ -21,6 +21,7 @@ public enum ErrorCode {
     // Validation (400)
     BAD_REQUEST(400, "BAD_REQUEST", "Invalid request"),
     INVALID_INPUT(400, "INVALID_INPUT", "Invalid input provided"),
+    INVALID_REQUEST(400, "INVALID_REQUEST", "Invalid request"),
     EMAIL_ALREADY_EXISTS(400, "EMAIL_ALREADY_EXISTS", "Email already exists"),
     PHONE_ALREADY_EXISTS(400, "PHONE_ALREADY_EXISTS", "Phone number already exists"),
     
