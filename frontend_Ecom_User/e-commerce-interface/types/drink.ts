@@ -1,0 +1,26 @@
+/**
+ * Drink Types
+ * Định nghĩa type cho dữ liệu từ backend API
+ */
+
+export type DrinkType = 'FEATURED' | 'NORMAL'
+
+export interface Drink {
+  id: number
+  name: string
+  description: string
+  price: number
+  quantity: number
+  imageUrl: string
+  category: string
+  type: DrinkType
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DrinkCardProps extends Drink {
+  // Props thêm cho hiển thị UI (random data)
+  deliveryTime: string
+  distance: string
+  rating: number
+}
