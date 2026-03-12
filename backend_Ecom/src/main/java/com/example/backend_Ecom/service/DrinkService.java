@@ -5,6 +5,7 @@ import com.example.backend_Ecom.dto.DrinkResponseDto;
 import com.example.backend_Ecom.entity.Drink;
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
@@ -51,9 +52,10 @@ public class DrinkService {
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : Category.DRINK)
-                .type(request.getType())
+                .category(request.getCategory() != null ? request.getCategory() : Category.COFFEE)
+                .featured(request.getFeatured() != null ? request.getFeatured() : false)
                 .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
+                .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
                 .build();
 
         drink = drinkRepository.save(drink);
@@ -79,8 +81,9 @@ public class DrinkService {
         if (request.getPrice() != null) drink.setPrice(request.getPrice());
         if (request.getQuantity() != null) drink.setQuantity(request.getQuantity());
         if (request.getCategory() != null) drink.setCategory(request.getCategory());
-        if (request.getType() != null) drink.setType(request.getType());
+        if (request.getFeatured() != null) drink.setFeatured(request.getFeatured());
         if (request.getUnit() != null) drink.setUnit(request.getUnit());
+        if (request.getRegion() != null) drink.setRegion(request.getRegion());
 
         String imageUrl = resolveImage(request, drink.getImageUrl());
         if (imageUrl != null) drink.setImageUrl(imageUrl);
@@ -121,20 +124,20 @@ public class DrinkService {
                 .collect(Collectors.toList());
     }
 
-    public List<DrinkResponseDto> searchByName(String name) {
-        log.info("Searching drinks by name: {}", name);
-        return drinkRepository.findByNameContainingIgnoreCase(name)
+    public List<DrinkResponseDto> advancedSearch(String name, String description, Category category, Region region) {
+        log.info("Advanced search - name: {}, description: {}, category: {}, region: {}", name, description, category, region);
+        return drinkRepository.findAll(DrinkSpecification.advancedSearchCriteria(name, description, category, region))
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
-    public List<DrinkResponseDto> filterDrinks(String name, Category category, DrinkType type, 
-                                                Unit unit, Long minPrice, Long maxPrice) {
-        log.info("Filtering drinks - name: {}, category: {}, type: {}, unit: {}, price: {} - {}", 
-                 name, category, type, unit, minPrice, maxPrice);
+    public List<DrinkResponseDto> filterDrinks(Category category, Boolean featured, 
+                                                Unit unit, Long minPrice, Long maxPrice, Region region) {
+        log.info("Filtering drinks - category: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 
+                  category, featured, unit, minPrice, maxPrice, region);
         
-        return drinkRepository.findAll(DrinkSpecification.filterByCriteria(name, category, type, unit, minPrice, maxPrice))
+        return drinkRepository.findAll(DrinkSpecification.filterByCriteria(category, featured, unit, minPrice, maxPrice, region))
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -168,8 +171,9 @@ public class DrinkService {
                 .quantity(drink.getQuantity())
                 .imageUrl(drink.getImageUrl())
                 .category(drink.getCategory())
-                .type(drink.getType())
+                .featured(drink.getFeatured())
                 .unit(drink.getUnit())
+                .region(drink.getRegion())
                 .createdAt(drink.getCreatedAt())
                 .updatedAt(drink.getUpdatedAt())
                 .build();

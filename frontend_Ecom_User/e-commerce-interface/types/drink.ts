@@ -13,7 +13,7 @@ export interface Drink {
   quantity: number
   imageUrl: string
   category: string
-  type: DrinkType
+  featured: boolean
   unit: string  // Đơn vị: BAG, BOTTLE, etc
   createdAt: string
   updatedAt: string

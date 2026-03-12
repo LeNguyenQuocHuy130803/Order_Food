@@ -3,6 +3,7 @@ package com.example.backend_Ecom.specification;
 import com.example.backend_Ecom.entity.Drink;
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
@@ -18,22 +19,18 @@ import java.util.List;
 public class DrinkSpecification {
 
     /**
-     * Xây dựng Specification để filter theo nhiều tiêu chí
-     * @param name - Tìm kiếm theo tên (LIKE %name%)
-     * @param category - Loại sản phẩm (DRINK, FOOD, FRESH)
-     * @param type - Chủng loại (NORMAL, FEATURED)
-     * @param unit - Đơn vị (BOX, CARTON, CUP, ...)
-     * @param minPrice - Giá tối thiểu
-     * @param maxPrice - Giá tối đa
+     * Advanced search - Tìm kiếm theo tên, description, category, region
+     * @param name - Tìm kiếm theo tên (LIKE %name%, case-insensitive)
+     * @param description - Tìm kiếm trong mô tả (LIKE %description%, case-insensitive)
+     * @param category - Loại sản phẩm (COFFEE, MILK_TEA, JUICE, TEA)
+     * @param region - Khu vực bán (HANOI, HO_CHI_MINH, DA_NANG, ...)
      * Ghi chú: Tất cả tham số đều optional (null sẽ bị skip)
      */
-    public static Specification<Drink> filterByCriteria(String name, Category category, DrinkType type, 
-                                                         Unit unit, Long minPrice, Long maxPrice) {
+    public static Specification<Drink> advancedSearchCriteria(String name, String description, Category category, Region region) {
         return (root, query, criteriaBuilder) -> {
-            // Danh sách điều kiện filter
             List<Predicate> predicates = new ArrayList<>();
 
-            // Filter theo tên: LIKE '%name%' (không phân biệt hoa thường)
+            // Search by name (case-insensitive LIKE)
             if (name != null && !name.isBlank()) {
                 predicates.add(criteriaBuilder.like(
                     criteriaBuilder.lower(root.get("name")),
@@ -41,14 +38,54 @@ public class DrinkSpecification {
                 ));
             }
 
+            // Search by description (case-insensitive LIKE)
+            if (description != null && !description.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("description")),
+                    "%" + description.toLowerCase() + "%"
+                ));
+            }
+
+            // Filter by category
+            if (category != null) {
+                predicates.add(criteriaBuilder.equal(root.get("category"), category));
+            }
+
+            // Filter by region
+            if (region != null) {
+                predicates.add(criteriaBuilder.equal(root.get("region"), region));
+            }
+
+            // Kết hợp tất cả điều kiện với AND
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+    }
+
+    /**
+     * Xây dựng Specification để filter theo nhiều tiêu chí
+     * @param category - Loại sản phẩm (COFFEE, MILK_TEA, JUICE, TEA)
+     * @param featured - Sản phẩm nổi bật (true/false)
+     * @param unit - Đơn vị (BOX, CARTON, CUP, ...)
+     * @param minPrice - Giá tối thiểu
+     * @param maxPrice - Giá tối đa
+     * @param region - Khu vực bán (HANOI, HO_CHI_MINH, DA_NANG, ...)
+     * Ghi chú: Tất cả tham số đều optional (null sẽ bị skip)
+     */
+    public static Specification<Drink> filterByCriteria(Category category, Boolean featured, 
+                                                         Unit unit, Long minPrice, Long maxPrice, Region region) {
+        return (root, query, criteriaBuilder) -> {
+            // Danh sách điều kiện filter
+            List<Predicate> predicates = new ArrayList<>();
+
+
             // Filter theo loại sản phẩm (Category)
             if (category != null) {
                 predicates.add(criteriaBuilder.equal(root.get("category"), category));
             }
 
-            // Filter theo chủng loại (Type)
-            if (type != null) {
-                predicates.add(criteriaBuilder.equal(root.get("type"), type));
+            // Filter theo nổi bật (Featured)
+            if (featured != null) {
+                predicates.add(criteriaBuilder.equal(root.get("featured"), featured));
             }
 
             // Filter theo đơn vị (Unit)
@@ -64,6 +101,11 @@ public class DrinkSpecification {
             // Filter theo giá tối đa
             if (maxPrice != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
+            }
+
+            // Filter theo khu vực (Region)
+            if (region != null) {
+                predicates.add(criteriaBuilder.equal(root.get("region"), region));
             }
 
             // Kết hợp tất cả điều kiện với AND

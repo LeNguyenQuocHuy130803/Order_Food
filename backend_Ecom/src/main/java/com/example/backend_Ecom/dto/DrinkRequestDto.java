@@ -2,6 +2,7 @@ package com.example.backend_Ecom.dto;
 
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -34,14 +35,17 @@ private Long price;
     @Schema(description = "Drink image URL")
     private String imageUrl;
 
-    @Schema(description = "Drink category", example = "DRINK")
+    @Schema(description = "Drink category", example = "COFFEE")
     private Category category;
 
-    @Builder.Default
-    private DrinkType type = DrinkType.NORMAL;
+    @Schema(description = "Is featured/prominent", example = "true")
+    private Boolean featured;
 
     @Builder.Default
     private Unit unit = Unit.ITEM;
+
+    @Schema(description = "Drink region", example = "HA_NOI")
+    private Region region;
 
     private MultipartFile image;  // For form-data upload
 }

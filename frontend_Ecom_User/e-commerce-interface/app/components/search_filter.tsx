@@ -15,14 +15,15 @@ interface FilterState {
 }
 
 const REGIONS = [
-  'Hà Nội',
-  'Quận 1',
-  'Quận 3',
-  'Quận 5',
-  'Quận 7',
-  'Quận 10',
-  'Bình Thạnh',
-  'Gò Vấp',
+  'HA_NOI',
+  'DA_NANG',
+  'HO_CHI_MINH',
+  'HAI_PHONG',
+  'CAN_THO',
+  'QUANG_NINH',
+  'BINH_DUONG',
+  'DONG_NAI',
+  'LAM_DONG',
 ];
 
 const PRICE_RANGES = [
@@ -134,13 +135,10 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
               <div className="flex flex-wrap gap-3">
 
                 {[
-                  'Cơm',
-                  'Bánh mì',
-                  'Phở',
-                  'Bún',
-                  'Nước ép',
-                  'Cà phê',
-                  'Tráng miệng',
+                  'COFFEE',
+                  'JUICE',
+                  'MILK_TEA',
+                  'TEA',
                 ].map((category) => (
                   <button
                     key={category}

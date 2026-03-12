@@ -1,9 +1,10 @@
 package com.example.backend_Ecom.enums;
 
 public enum Category {
-    DRINK("Drink", "Thức uống"),
-    FOOD("Food", "Thực phẩm"),
-    FRESH("Fresh", "Tươi sống");
+    COFFEE("Coffee", "Cà phê"),
+    MILK_TEA("Milk Tea", "Trà sữa"),
+    JUICE("Juice", "Nước ép"),
+    TEA("Tea", "Trà");
 
     private final String englishName;
     private final String vietnameseName;

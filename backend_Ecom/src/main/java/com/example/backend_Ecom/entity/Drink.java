@@ -2,6 +2,7 @@ package com.example.backend_Ecom.entity;
 
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import java.time.LocalDateTime;
 
@@ -41,17 +42,21 @@ public class Drink {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private Category category = Category.DRINK;
+    private Category category = Category.COFFEE;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private DrinkType type = DrinkType.NORMAL;
+    private Boolean featured = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private Unit unit = Unit.ITEM;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Region region = Region.HA_NOI;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

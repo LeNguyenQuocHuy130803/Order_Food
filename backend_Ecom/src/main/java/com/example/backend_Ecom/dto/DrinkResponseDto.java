@@ -2,6 +2,7 @@ package com.example.backend_Ecom.dto;
 
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -28,9 +29,11 @@ public class DrinkResponseDto {
 
     private Category category;
 
-    private DrinkType type;
+    private Boolean featured;
 
     private Unit unit;
+
+    private Region region;
 
     private LocalDateTime createdAt;
 

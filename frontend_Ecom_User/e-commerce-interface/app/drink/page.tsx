@@ -21,7 +21,9 @@ export default function FoodPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<{ [key: number]: boolean }>({});
-  const [displayCount, setDisplayCount] = useState(9); // Hiển thị 9 sản phẩm lần đầu
+  const [displayCount, setDisplayCount] = useState(9);
+  const [filterResults, setFilterResults] = useState<DrinkCardProps[]>([]);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   useEffect(() => {
     const fetchDrinks = async () => {
@@ -66,6 +68,30 @@ export default function FoodPage() {
     fetchDrinks();
   }, []);
 
+  const handleFilterChange = (results: any[]) => {
+    console.log('🎯 Filter results received:', results);
+    const transformedResults: DrinkCardProps[] = results.map((drink) => ({
+      ...drink,
+      deliveryTime: getRandomDeliveryTime(),
+      distance: getRandomDistance(),
+      rating: getRandomRating(),
+      description: drink.description || drink.category || "Đồ uống",
+    }));
+    
+    setFilterResults(transformedResults);
+    setDisplayCount(9);
+    if (transformedResults.length > 0) {
+      setIsFiltering(true);
+    }
+  };
+
+  const handleResetFilter = () => {
+    console.log('🔄 Resetting filter...');
+    setIsFiltering(false);
+    setFilterResults([]);
+    setDisplayCount(9);
+  };
+
   return (
     <main className="bg-background min-h-screen">
       <Header />
@@ -79,11 +105,20 @@ export default function FoodPage() {
         </div>
 
         <div className="flex gap-6">
-          <FilterSidebar />
+          <FilterSidebar onFilterChange={handleFilterChange} />
 
           <div className="flex-1">
+            {/* Show filter reset button when filtering */}
+            {isFiltering && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                <p className="text-blue-700">
+                  Đang hiển thị <span className="font-bold text-[#ff5528]">{filterResults.length}</span> kết quả lọc
+                </p>
+              </div>
+            )}
+
             {/* Loading State */}
-            {isLoading && (
+            {isLoading && !isFiltering && (
               <div className="flex justify-center items-center py-12">
                 <div className="animate-spin">
                   <svg
@@ -133,12 +168,12 @@ export default function FoodPage() {
             )}
 
             {/* Drinks Grid */}
-            {!isLoading && !error && drinks.length > 0 && (
+            {!isLoading && !error && (isFiltering ? filterResults : drinks).length > 0 && (
               <>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Chỉ hiển thị 9 sản phẩm đầu tiên (hoặc displayCount) */}
-                  {drinks.slice(0, displayCount).map((drink) => {
+                  {/* Hiển thị filtered results hoặc tất cả drinks */}
+                  {(isFiltering ? filterResults : drinks).slice(0, displayCount).map((drink) => {
                     const reviewCount = Math.floor(Math.random() * 401) + 100;
                     const isFavorited = favorites[drink.id] || false;
 
@@ -167,7 +202,7 @@ export default function FoodPage() {
                           />
 
                           {/* Badge FEATURED - dựa vào drink.type */}
-                          {drink.type === "FEATURED" && (
+                          {drink.featured === true && (
                             <div className="absolute top-3 left-3 z-10 bg-red-500 text-white px-2.5 py-1.5 rounded-full text-xs font-bold">
                               Nổi bật
                             </div>
@@ -251,7 +286,7 @@ export default function FoodPage() {
                 </div>
 
                 {/* Load More / Collapse Button */}
-                {drinks.length > 9 && (
+                {(isFiltering ? filterResults : drinks).length > 9 && (
                   <div className="mt-12 flex justify-center gap-4">
                     {/* Nút Thu gọn - hiển thị khi displayCount > 9 */}
                     {displayCount > 9 && (
@@ -264,7 +299,7 @@ export default function FoodPage() {
                     )}
 
                     {/* Nút Xem thêm - hiển thị khi còn sản phẩm chưa hiển thị */}
-                    {displayCount < drinks.length && (
+                    {displayCount < (isFiltering ? filterResults : drinks).length && (
                       <button 
                         onClick={() => setDisplayCount((prev) => prev + 9)}
                         className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
