@@ -3,9 +3,13 @@ package com.example.backend_Ecom.service;
 import com.example.backend_Ecom.dto.DrinkRequestDto;
 import com.example.backend_Ecom.dto.DrinkResponseDto;
 import com.example.backend_Ecom.entity.Drink;
+import com.example.backend_Ecom.enums.Category;
+import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Unit;
 import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
 import com.example.backend_Ecom.repository.DrinkRepository;
+import com.example.backend_Ecom.specification.DrinkSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,13 +51,14 @@ public class DrinkService {
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : "General")
+                .category(request.getCategory() != null ? request.getCategory() : Category.DRINK)
                 .type(request.getType())
+                .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
                 .build();
 
         drink = drinkRepository.save(drink);
 
-        log.info("✓ Drink created: {}", drink.getId());
+//        log.info("✓ Drink created: {}", drink.getId());
         return mapToDto(drink);
     }
 
@@ -75,6 +80,7 @@ public class DrinkService {
         if (request.getQuantity() != null) drink.setQuantity(request.getQuantity());
         if (request.getCategory() != null) drink.setCategory(request.getCategory());
         if (request.getType() != null) drink.setType(request.getType());
+        if (request.getUnit() != null) drink.setUnit(request.getUnit());
 
         String imageUrl = resolveImage(request, drink.getImageUrl());
         if (imageUrl != null) drink.setImageUrl(imageUrl);
@@ -115,6 +121,25 @@ public class DrinkService {
                 .collect(Collectors.toList());
     }
 
+    public List<DrinkResponseDto> searchByName(String name) {
+        log.info("Searching drinks by name: {}", name);
+        return drinkRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<DrinkResponseDto> filterDrinks(String name, Category category, DrinkType type, 
+                                                Unit unit, Long minPrice, Long maxPrice) {
+        log.info("Filtering drinks - name: {}, category: {}, type: {}, unit: {}, price: {} - {}", 
+                 name, category, type, unit, minPrice, maxPrice);
+        
+        return drinkRepository.findAll(DrinkSpecification.filterByCriteria(name, category, type, unit, minPrice, maxPrice))
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
     private String resolveImage(DrinkRequestDto request, String currentImage) {
 
         if (request.getImage() != null && !request.getImage().isEmpty()) {
@@ -144,6 +169,7 @@ public class DrinkService {
                 .imageUrl(drink.getImageUrl())
                 .category(drink.getCategory())
                 .type(drink.getType())
+                .unit(drink.getUnit())
                 .createdAt(drink.getCreatedAt())
                 .updatedAt(drink.getUpdatedAt())
                 .build();

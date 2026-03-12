@@ -1,6 +1,8 @@
 package com.example.backend_Ecom.dto;
 
+import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Unit;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -24,9 +26,11 @@ public class DrinkResponseDto {
 
     private String imageUrl;
 
-    private String category;
+    private Category category;
 
     private DrinkType type;
+
+    private Unit unit;
 
     private LocalDateTime createdAt;
 

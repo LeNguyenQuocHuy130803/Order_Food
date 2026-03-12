@@ -14,6 +14,7 @@ export interface Drink {
   imageUrl: string
   category: string
   type: DrinkType
+  unit: string  // Đơn vị: BAG, BOTTLE, etc
   createdAt: string
   updatedAt: string
 }

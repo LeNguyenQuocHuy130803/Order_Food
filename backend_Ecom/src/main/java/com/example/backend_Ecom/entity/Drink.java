@@ -1,6 +1,8 @@
 package com.example.backend_Ecom.entity;
 
+import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.Unit;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
@@ -36,14 +38,20 @@ public class Drink {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private String category = "General";
+    private Category category = Category.DRINK;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
     private DrinkType type = DrinkType.NORMAL;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private Unit unit = Unit.ITEM;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

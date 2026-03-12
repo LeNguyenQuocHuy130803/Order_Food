@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Clock, MapPin, Star, Heart } from "lucide-react";
 import { FilterSidebar } from "../components/filter_sidebar";
@@ -77,10 +78,10 @@ export default function FoodPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="flex gap-6">
           <FilterSidebar />
 
-          <div className="lg:col-span-3">
+          <div className="flex-1">
             {/* Loading State */}
             {isLoading && (
               <div className="flex justify-center items-center py-12">
@@ -142,9 +143,16 @@ export default function FoodPage() {
                     const isFavorited = favorites[drink.id] || false;
 
                     return (
-                      <div
+                      <Link 
                         key={drink.id}
-                        className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300"
+                        href={`/food/${drink.id}`}
+                        className="group relative bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 block"
+                        onClick={(e) => {
+                          // Prevent navigation khi click vào favorite button
+                          if ((e.target as HTMLElement).closest('button')) {
+                            e.preventDefault();
+                          }
+                        }}
                       >
                         {/* Image Container */}
                         <div className="relative w-full h-64 overflow-hidden bg-gray-100">
@@ -223,16 +231,21 @@ export default function FoodPage() {
                                 {drink.deliveryTime}
                               </span>
                             </div>
-                            <span className="text-red-500 font-black text-lg">
-                              ${(drink.price / 1000).toFixed(1)}
-                            </span>
+                            <div className="flex items-baseline gap-0.5">
+                              <span className="text-red-500 font-black text-lg">
+                                ${(drink.price / 1000).toFixed(1)}
+                              </span>
+                              <span className="text-red-500 font-bold text-xs">
+                                /{drink.unit}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-1">
                               <MapPin size={14} className="text-gray-500" />
                               <span className="font-medium">{drink.distance}</span>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
