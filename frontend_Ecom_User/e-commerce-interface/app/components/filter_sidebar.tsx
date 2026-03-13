@@ -1,135 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import type { FilterParams } from '@/types/drink';
 
 interface FilterSidebarProps {
-  onFilterChange?: (results: any[]) => void;
+  onFilterChange?: (filters: FilterParams) => void;
+  initialFilters?: FilterParams;
 }
 
-export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
+export function FilterSidebar({ onFilterChange, initialFilters }: FilterSidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [expandedSections, setExpandedSections] = useState<string[]>(['category', 'featured']);
-  const [minPrice, setMinPrice] = useState<string>('0');
+  
+  // Filter state
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedFeatured, setSelectedFeatured] = useState<boolean | false>(false);
+  const [minPrice, setMinPrice] = useState<string>('');
   const [maxPrice, setMaxPrice] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string[]>([]);
-  const [selectedFeatured, setSelectedFeatured] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Restore UI state from initialFilters when they change (e.g., when URL params change)
+  useEffect(() => {
+    if (initialFilters) {
+      setSelectedCategories(initialFilters.categories || []);
+      setSelectedFeatured(initialFilters.featured || false);
+      setMinPrice(initialFilters.minPrice ? initialFilters.minPrice.toString() : '');
+      setMaxPrice(initialFilters.maxPrice ? initialFilters.maxPrice.toString() : '');
+    }
+  }, [initialFilters]);
 
   const formatPrice = (price: string): string => {
     if (!price) return '';
     return price.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-  };
-
-  const debouncedPerformFilter = (categories: string[], featured: string[], minP: string, maxP: string) => {
-    // Clear previous timeout
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timeout
-    debounceTimerRef.current = setTimeout(() => {
-      performFilter(categories, featured, minP, maxP);
-    }, 600); // Wait 800ms before calling API
-  };
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-  const performFilter = async (categories: string[], featured: string[], minP: string, maxP: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams();
-
-      // Thêm category
-      if (categories.length === 1) {
-        params.append('category', categories[0]);
-      } else if (categories.length > 1) {
-        // Nếu chọn nhiều category, gọi từng API rồi merge
-        const allResults: any[] = [];
-        for (const cat of categories) {
-          const catParams = new URLSearchParams(params);
-          catParams.append('category', cat);
-          if (minP) catParams.append('minPrice', minP);
-          if (maxP) catParams.append('maxPrice', maxP);
-
-          console.log('📡 Fetching filter:', catParams.toString());
-          const response = await fetch(`http://localhost:8080/api/drinks/filter?${catParams}`);
-          if (response.ok) {
-            const data = await response.json();
-            allResults.push(...data);
-          }
-        }
-        console.log('🎯 Merged results:', allResults);
-        onFilterChange?.(allResults);
-        setLoading(false);
-        return;
-      }
-
-      // Thêm featured
-      if (featured.length > 0) {
-        featured.forEach(f => {
-          params.append('featured', f === 'Featured' ? 'true' : 'false');
-        });
-      }
-
-      // Thêm giá
-      if (minP) params.append('minPrice', minP);
-      if (maxP) params.append('maxPrice', maxP);
-
-      const url = `http://localhost:8080/api/drinks/filter?${params}`;
-      console.log('📡 Fetching filter:', url);
-
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'Lỗi lọc sản phẩm');
-        onFilterChange?.([]);
-        setLoading(false);
-        return;
-      }
-
-      const results = await response.json();
-      console.log('✅ Filter results:', results);
-      onFilterChange?.(results);
-    } catch (err) {
-      console.error('💥 Filter error:', err);
-      setError('Không thể kết nối tới server');
-      onFilterChange?.([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleMinPriceChange = (value: string) => {
-    setMinPrice(value);
-    let newMaxPrice = maxPrice;
-    if (maxPrice && parseInt(value) > parseInt(maxPrice)) {
-      newMaxPrice = (parseInt(value) + 10000).toString();
-      setMaxPrice(newMaxPrice);
-    }
-    debouncedPerformFilter(selectedCategory, selectedFeatured, value, newMaxPrice);
-  };
-
-  const handleMaxPriceChange = (value: string) => {
-    if (value && minPrice && parseInt(value) <= parseInt(minPrice)) {
-      const newMaxPrice = (parseInt(minPrice) + 10000).toString();
-      setMaxPrice(newMaxPrice);
-      debouncedPerformFilter(selectedCategory, selectedFeatured, minPrice, newMaxPrice);
-      return;
-    }
-    setMaxPrice(value);
-    debouncedPerformFilter(selectedCategory, selectedFeatured, minPrice, value);
   };
 
   const toggleSection = (section: string) => {
@@ -138,29 +41,59 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
     );
   };
 
-  const toggleCategory = (category: string) => {
-    const newCategories = selectedCategory.includes(category)
-      ? selectedCategory.filter(c => c !== category)
-      : [...selectedCategory, category];
-    setSelectedCategory(newCategories);
-    debouncedPerformFilter(newCategories, selectedFeatured, minPrice, maxPrice);
+  // Handle category changes
+  const handleCategoryChange = (category: string, checked: boolean) => {
+    const newCategories = checked
+      ? [...selectedCategories, category]
+      : selectedCategories.filter(c => c !== category);
+    setSelectedCategories(newCategories);
+    notifyFilterChange(newCategories, selectedFeatured, minPrice, maxPrice);
   };
 
-  const toggleFeatured = (featured: string) => {
-    const newFeatured = selectedFeatured.includes(featured)
-      ? selectedFeatured.filter(f => f !== featured)
-      : [...selectedFeatured, featured];
-    setSelectedFeatured(newFeatured);
-    debouncedPerformFilter(selectedCategory, newFeatured, minPrice, maxPrice);
+  // Handle featured changes
+  const handleFeaturedChange = (checked: boolean) => {
+    setSelectedFeatured(checked);
+    notifyFilterChange(selectedCategories, checked, minPrice, maxPrice);
   };
 
-  const handleResetFilters = () => {
-    setMinPrice('0');
+  // Handle price changes
+  const handlePriceChange = (type: 'min' | 'max', value: string) => {
+    if (type === 'min') {
+      setMinPrice(value);
+      notifyFilterChange(selectedCategories, selectedFeatured, value, maxPrice);
+    } else {
+      setMaxPrice(value);
+      notifyFilterChange(selectedCategories, selectedFeatured, minPrice, value);
+    }
+  };
+
+  // Notify parent component of filter changes
+  const notifyFilterChange = (
+    categories: string[],
+    featured: boolean,
+    min: string,
+    max: string
+  ) => {
+    if (onFilterChange) {
+      const filters: FilterParams = {
+        categories: categories.length > 0 ? categories : undefined,
+        featured: featured ? true : undefined,
+        minPrice: min ? parseInt(min) : undefined,
+        maxPrice: max ? parseInt(max) : undefined,
+      };
+      onFilterChange(filters);
+    }
+  };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSelectedCategories([]);
+    setSelectedFeatured(false);
+    setMinPrice('');
     setMaxPrice('');
-    setSelectedCategory([]);
-    setSelectedFeatured([]);
-    setError(null);
-    performFilter([], [], '0', '');
+    if (onFilterChange) {
+      onFilterChange({});
+    }
   };
 
   return (
@@ -181,21 +114,6 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
 
         <h2 className="font-bold text-lg mb-6">Bộ lọc</h2>
 
-        {/* Error message */}
-        {error && (
-          <div className="mb-4 p-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
-            ⚠️ {error}
-          </div>
-        )}
-
-        {/* Loading */}
-        {loading && (
-          <div className="mb-4 p-2 bg-blue-50 border border-blue-200 text-blue-700 text-xs rounded flex items-center gap-2">
-            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            Đang lọc...
-          </div>
-        )}
-
         {/* Category Filter */}
         <div className="mb-6 pb-6 border-b border-border">
           <button
@@ -213,8 +131,8 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
                 <label key={category} className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={selectedCategory.includes(category)}
-                    onChange={() => toggleCategory(category)}
+                    checked={selectedCategories.includes(category)}
+                    onChange={(e) => handleCategoryChange(category, e.target.checked)}
                     className="w-4 h-4 rounded border-border accent-primary"
                   />
                   <span className="text-sm">{category}</span>
@@ -236,18 +154,16 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
             />
           </button>
           {expandedSections.includes('featured') && (
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {['Featured', 'Normal'].map((featured) => (
-                <label key={featured} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedFeatured.includes(featured)}
-                    onChange={() => toggleFeatured(featured)}
-                    className="w-4 h-4 rounded border-border accent-primary"
-                  />
-                  <span className="text-sm">{featured}</span>
-                </label>
-              ))}
+            <div className="mt-4 space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedFeatured}
+                  onChange={(e) => handleFeaturedChange(e.target.checked)}
+                  className="w-4 h-4 rounded border-border accent-primary"
+                />
+                <span className="text-sm">Nổi bật</span>
+              </label>
             </div>
           )}
         </div>
@@ -271,9 +187,9 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
                     type="number"
                     min="0"
                     step="10000"
-                    placeholder="0"
+                    placeholder="Từ"
                     value={minPrice}
-                    onChange={(e) => handleMinPriceChange(e.target.value)}
+                    onChange={(e) => handlePriceChange('min', e.target.value)}
                     className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <p className="text-xs text-gray-500 mt-1">{formatPrice(minPrice)} đ</p>
@@ -283,9 +199,9 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
                     type="number"
                     min="0"
                     step="10000"
-                    placeholder="0"
+                    placeholder="Đến"
                     value={maxPrice}
-                    onChange={(e) => handleMaxPriceChange(e.target.value)}
+                    onChange={(e) => handlePriceChange('max', e.target.value)}
                     className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <p className="text-xs text-gray-500 mt-1">{formatPrice(maxPrice)} đ</p>
@@ -300,8 +216,8 @@ export function FilterSidebar({ onFilterChange }: FilterSidebarProps) {
 
         {/* Clear Filters Button */}
         <Button
-          onClick={handleResetFilters}
           variant="outline"
+          onClick={handleClearFilters}
           className="w-full mt-6 border-border hover:bg-secondary"
         >
           Xóa bộ lọc

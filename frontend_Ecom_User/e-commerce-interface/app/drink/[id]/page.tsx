@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Clock, MapPin, Star, Heart, ArrowLeft, ShoppingCart } from "lucide-react";
+import { Heart, ArrowLeft, ShoppingCart } from "lucide-react";
 
 import type { Drink } from "@/types/drink";
+import { DrinkService } from "@/service/DrinkService";
 import { Header } from "@/app/components/header";
 import { Footer } from "@/app/components/footer";
+
 
 export default function DrinkDetailPage() {
   const params = useParams();
@@ -26,22 +28,7 @@ export default function DrinkDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `http://localhost:8080/api/drinks/${drinkId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            cache: "no-store",
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Không tìm thấy sản phẩm`);
-        }
-
-        const data: Drink = await response.json();
+        const data = await DrinkService.getDrinkById(Number(drinkId));
         setDrink(data);
       } catch (err) {
         const errorMessage =
@@ -112,8 +99,6 @@ export default function DrinkDetailPage() {
     );
   }
 
-  const ratingCount = Math.floor(Math.random() * 401) + 100;
-  const rating = Math.round((4.0 + Math.random() * 0.9) * 10) / 10;
   const totalPrice = drink.price * quantity;
 
   return (
@@ -145,7 +130,7 @@ export default function DrinkDetailPage() {
               />
 
               {/* Featured Badge */}
-              {drink.type === "FEATURED" && (
+              {drink.featured === true && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm">
                   Nổi bật
                 </div>
@@ -180,27 +165,8 @@ export default function DrinkDetailPage() {
               </h1>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-3 pb-6 border-b border-gray-200">
-              <div className="flex gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    className={
-                      i < Math.floor(rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }
-                  />
-                ))}
-              </div>
-              <span className="text-lg font-bold text-gray-800">{rating}</span>
-              <span className="text-gray-600">({ratingCount} reviews)</span>
-            </div>
-
             {/* Description */}
-            <div className="flex gap-8 items-start">
+            <div className="flex gap-8 items-start py-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-foreground min-w-max">Mô tả</h2>
               <p className="text-gray-600 leading-relaxed text-base">
                 {drink.description}
@@ -280,24 +246,6 @@ export default function DrinkDetailPage() {
               <ShoppingCart size={24} />
               <span>Đặt hàng ngay ({quantity} cái)</span>
             </button>
-
-            {/* Additional Info */}
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="flex items-center gap-3 text-gray-600">
-                <Clock size={20} />
-                <div>
-                  <p className="text-xs text-gray-500">Giao hàng</p>
-                  <p className="font-semibold">20-30 phút</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 text-gray-600">
-                <MapPin size={20} />
-                <div>
-                  <p className="text-xs text-gray-500">Khoảng cách</p>
-                  <p className="font-semibold">0.8 km</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

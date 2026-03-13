@@ -1,10 +1,3 @@
-/**
- * Drink Types
- * Định nghĩa type cho dữ liệu từ backend API
- */
-
-export type DrinkType = 'FEATURED' | 'NORMAL'
-
 export interface Drink {
   id: number
   name: string
@@ -14,14 +7,31 @@ export interface Drink {
   imageUrl: string
   category: string
   featured: boolean
-  unit: string  // Đơn vị: BAG, BOTTLE, etc
-  createdAt: string
-  updatedAt: string
+  unit: string
+  region: string
+  createdAt?: string
+  updatedAt?: string
 }
 
-export interface DrinkCardProps extends Drink {
-  // Props thêm cho hiển thị UI (random data)
-  deliveryTime: string
-  distance: string
-  rating: number
+// Props cho DrinkCard component (kế thừa từ Drink)
+export type DrinkCardProps = Drink;
+
+export interface PaginatedDrinkResponse {
+  data: Drink[]
+  pageNumber: number
+  pageSize: number
+  totalRecords: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+// Filter parameters (từ FilterSidebar)
+export interface FilterParams {
+  categories?: string[]
+  featured?: boolean
+  minPrice?: number
+  maxPrice?: number
+  unit?: string
+  region?: string
 }

@@ -63,24 +63,27 @@ public class DrinkSpecification {
 
     /**
      * Xây dựng Specification để filter theo nhiều tiêu chí
-     * @param category - Loại sản phẩm (COFFEE, MILK_TEA, JUICE, TEA)
+     * @param categories - Danh sách loại sản phẩm (COFFEE, MILK_TEA, JUICE, TEA) - dùng OR logic
      * @param featured - Sản phẩm nổi bật (true/false)
      * @param unit - Đơn vị (BOX, CARTON, CUP, ...)
      * @param minPrice - Giá tối thiểu
      * @param maxPrice - Giá tối đa
-     * @param region - Khu vực bán (HANOI, HO_CHI_MINH, DA_NANG, ...)
+     * @param region - Khu vực bán (HA_NOI, HO_CHI_MINH, DA_NANG, ...)
      * Ghi chú: Tất cả tham số đều optional (null sẽ bị skip)
+     *          Nhiều categories được kết hợp với OR logic
      */
-    public static Specification<Drink> filterByCriteria(Category category, Boolean featured, 
+    public static Specification<Drink> filterByCriteria(List<Category> categories, Boolean featured, 
                                                          Unit unit, Long minPrice, Long maxPrice, Region region) {
         return (root, query, criteriaBuilder) -> {
             // Danh sách điều kiện filter
             List<Predicate> predicates = new ArrayList<>();
 
-
-            // Filter theo loại sản phẩm (Category)
-            if (category != null) {
-                predicates.add(criteriaBuilder.equal(root.get("category"), category));
+            // Filter theo loại sản phẩm (Categories) - OR logic
+            if (categories != null && !categories.isEmpty()) {
+                Predicate[] categoryPredicates = categories.stream()
+                    .map(cat -> criteriaBuilder.equal(root.get("category"), cat))
+                    .toArray(Predicate[]::new);
+                predicates.add(criteriaBuilder.or(categoryPredicates));
             }
 
             // Filter theo nổi bật (Featured)

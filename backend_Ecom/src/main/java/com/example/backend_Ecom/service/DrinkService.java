@@ -2,6 +2,7 @@ package com.example.backend_Ecom.service;
 
 import com.example.backend_Ecom.dto.DrinkRequestDto;
 import com.example.backend_Ecom.dto.DrinkResponseDto;
+import com.example.backend_Ecom.dto.PaginatedDrinkResponseDto;
 import com.example.backend_Ecom.entity.Drink;
 import com.example.backend_Ecom.enums.Category;
 import com.example.backend_Ecom.enums.DrinkType;
@@ -13,6 +14,9 @@ import com.example.backend_Ecom.repository.DrinkRepository;
 import com.example.backend_Ecom.specification.DrinkSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -116,12 +120,29 @@ public class DrinkService {
         return mapToDto(drink);
     }
 
-    public List<DrinkResponseDto> getAllDrinks() {
+    
+    public PaginatedDrinkResponseDto getAllDrinksPaginated(int page, int size) {
+        // Convert 1-based page to 0-based for Spring Data
+        Pageable pageable = PageRequest.of(page - 1, size);
 
-        return drinkRepository.findAll()
-                .stream()
+        // Lấy dữ liệu phân trang từ repository
+        Page<Drink> drinkPage = drinkRepository.findAll(pageable);
+
+        // Chuyển đổi Page<Drink> thành List<DrinkResponseDto>
+        List<DrinkResponseDto> drinkDtos = drinkPage.getContent().stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+
+        // Tạo response DTO với thông tin phân trang (convert back to 1-based for response)
+        return PaginatedDrinkResponseDto.builder()
+                .data(drinkDtos)
+                .pageNumber(drinkPage.getNumber() + 1)  // Convert back to 1-based
+                .pageSize(drinkPage.getSize())
+                .totalRecords(drinkPage.getTotalElements())
+                .totalPages(drinkPage.getTotalPages())
+                .hasNext(drinkPage.hasNext())
+                .hasPrevious(drinkPage.hasPrevious())
+                .build();
     }
 
     public List<DrinkResponseDto> advancedSearch(String name, String description, Category category, Region region) {
@@ -132,12 +153,12 @@ public class DrinkService {
                 .collect(Collectors.toList());
     }
 
-    public List<DrinkResponseDto> filterDrinks(Category category, Boolean featured, 
+    public List<DrinkResponseDto> filterDrinks(List<Category> categories, Boolean featured, 
                                                 Unit unit, Long minPrice, Long maxPrice, Region region) {
-        log.info("Filtering drinks - category: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 
-                  category, featured, unit, minPrice, maxPrice, region);
+        log.info("Filtering drinks - categories: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 
+                  categories, featured, unit, minPrice, maxPrice, region);
         
-        return drinkRepository.findAll(DrinkSpecification.filterByCriteria(category, featured, unit, minPrice, maxPrice, region))
+        return drinkRepository.findAll(DrinkSpecification.filterByCriteria(categories, featured, unit, minPrice, maxPrice, region))
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
