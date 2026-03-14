@@ -107,12 +107,10 @@ export function Header() {
                 <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Home</Link>
                 <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Menu</Link>
                 <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">About</Link>
-                <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Pages</Link>
+                <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drinks</Link>
                 <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
                 <Link href="#contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
-                <Button className="bg-[#ff5528] hover:bg-[#e04a22] text-white font-semibold w-full">
-                  ORDER NOW
-                </Button>
+
               </nav>
             </div>
           </div>

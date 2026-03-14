@@ -15,7 +15,7 @@ export const DrinkService = {
    */
   async getAllDrinksPaginated(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 9
   ): Promise<PaginatedDrinkResponse> {
     try {
       const url = new URL(
