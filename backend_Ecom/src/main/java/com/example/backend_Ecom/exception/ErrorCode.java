@@ -14,12 +14,14 @@ public enum ErrorCode {
     UNAUTHORIZED(401, "UNAUTHORIZED", "Authentication required"),
     FORBIDDEN(403, "FORBIDDEN", "Access denied"),
     INVALID_CREDENTIALS(401, "INVALID_CREDENTIALS", "Invalid email or password"),
+    ACCOUNT_LOCKED(401, "ACCOUNT_LOCKED", "Account is locked due to multiple failed login attempts. Please try again later."),
     TOKEN_EXPIRED(401, "TOKEN_EXPIRED", "Token has expired"),
     INVALID_TOKEN(401, "INVALID_TOKEN", "Invalid or malformed token"),
     
     // Validation (400)
     BAD_REQUEST(400, "BAD_REQUEST", "Invalid request"),
     INVALID_INPUT(400, "INVALID_INPUT", "Invalid input provided"),
+    INVALID_REQUEST(400, "INVALID_REQUEST", "Invalid request"),
     EMAIL_ALREADY_EXISTS(400, "EMAIL_ALREADY_EXISTS", "Email already exists"),
     PHONE_ALREADY_EXISTS(400, "PHONE_ALREADY_EXISTS", "Phone number already exists"),
     

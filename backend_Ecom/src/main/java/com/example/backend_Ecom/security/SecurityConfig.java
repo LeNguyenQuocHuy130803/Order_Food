@@ -1,4 +1,4 @@
-package com.example.backend_Ecom.security;
+package com.example.backend_Ecom.config;
 
 import com.example.backend_Ecom.exception.CustomAccessDeniedHandler;
 import com.example.backend_Ecom.exception.CustomAuthenticationEntryPoint;

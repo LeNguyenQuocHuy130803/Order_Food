@@ -52,6 +52,10 @@ dependencies {
 	// Rate limiting for brute force protection
 	implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.6.0'
 
+	// Cloudinary for image upload
+	implementation 'com.cloudinary:cloudinary-http45:1.36.0'
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+
 }
 
 tasks.named('test') {

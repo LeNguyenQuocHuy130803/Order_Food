@@ -1,7 +1,7 @@
 
 import * as yup from 'yup'
 
-export const loginValidationSchema = yup.object({
+export const SchemaLogin = yup.object({
   email: yup
     .string()
     .required('Please enter your email!')
@@ -14,4 +14,4 @@ export const loginValidationSchema = yup.object({
     .max(50, 'Password must be less than 50 characters'),
 })
 
-export type LoginFormData = yup.InferType<typeof loginValidationSchema>
+export type LoginFormData = yup.InferType<typeof SchemaLogin>

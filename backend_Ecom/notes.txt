@@ -1,0 +1,36 @@
+trong dự án hiện tại đang sử dụng rấtnhieeuf thuộc tính OOP :
+nhất là ở các file reponsitory : nó đang sử dụgn extends kế thừa JpaRepository tự độg  có các method : save(),findById(), findAll(), delete()...
+Kế thừa từ JpaSpecificationExecutor → có method findAll(Specification)
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+trong các fie exception kế thừa từ RuntimeException , ngoài ra trong các file như :   GlobalExceptionHandler có tính đa hình :
+@ExceptionHandler(AppException.class)
+public ResponseEntity<ErrorResponse> handleAppException(...) { ... }
+
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<ErrorResponse> handleValidationException(...) { ... }
+
+@ExceptionHandler(Exception.class)  // Fallback
+public ResponseEntity<ErrorResponse> handleGenericException(...) { ... }
+
+Cùng method name, nhưng khác parameter type (Exception types khác nhau)
+Runtime sẽ chọn handler phù hợp dựa trên exception type
+Đây là Compile-time Polymorphism (Method Overloading)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+trong các lớp entity có sdung tính đóng gói nè private , public ,.....
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+tính trừu tường trong các file jpa :
+
+public interface DrinkRepository extends JpaRepository<Drink, Long>, 
+                                         JpaSpecificationExecutor<Drink> {
+    boolean existsByName(String name);
+    List<Drink> findByNameContainingIgnoreCase(String name);
+}
+
+Service không biết database là MySQL hay PostgreSQL
+Repository abstract chi tiết SQL, raw queries
+Service chỉ gọi method high-level: drinkRepository.save(), drinkRepository.findAll()
+
