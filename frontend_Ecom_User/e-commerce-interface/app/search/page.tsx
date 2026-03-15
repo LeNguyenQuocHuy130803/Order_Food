@@ -103,6 +103,7 @@ export default function SearchPage() {
           loading={loading}
           error={error}
           results={results}
+          productType="drink"
           resultCount={results.length > 0 ? `Tìm thấy ${results.length} kết quả` : undefined}
           emptyMessage="Không tìm thấy kết quả"
         />

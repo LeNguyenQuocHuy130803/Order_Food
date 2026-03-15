@@ -5,16 +5,28 @@ import { Heart } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { DrinkCardProps } from "@/types/drink"
 
-export default function DrinkCard(props: DrinkCardProps) {
+interface Product {
+  id: number
+  name: string
+  imageUrl: string
+  price: number
+  featured: boolean
+}
+
+interface ProductCardProps {
+  product: Product
+  type: 'drink' | 'food' | 'fresh'
+}
+
+export default function ProductCard({ product, type }: ProductCardProps) {
   const [isFavorited, setIsFavorited] = useState(false)
   const searchParams = useSearchParams()
 
-  const { id, name, imageUrl, featured } = props
+  const { id, name, imageUrl, featured, price } = product
 
   const detailHref =
-    `/drink/${id}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+    `/${type}/${id}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
 
   return (
     <Link href={detailHref}>
@@ -49,15 +61,21 @@ export default function DrinkCard(props: DrinkCardProps) {
           </button>
         </div>
 
-        <div className="p-4 flex justify-between items-start">
-          <h3 className="font-bold text-base line-clamp-2">{name}</h3>
+        <div className="p-4">
+          <h3 className="font-bold text-base line-clamp-2 mb-2">{name}</h3>
+          
+          {price && (
+            <p className="text-[#ff5528] font-bold text-lg mb-3">
+              {typeof price === 'number' ? `${price.toLocaleString('vi-VN')}₫` : price}
+            </p>
+          )}
 
           <button
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
             }}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
           >
             Order
           </button>

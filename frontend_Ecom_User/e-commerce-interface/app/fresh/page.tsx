@@ -8,7 +8,7 @@ import { Footer } from "@/app/components/footer";
 import { Header } from "@/app/components/header";
 import { ResultsDisplay } from "@/app/components/results-display";
 
-import { useDrinks } from "@/hooks/useDrinks";
+import { useFresh } from "@/hooks/useFresh";
 
 import type { FilterParams } from "@/types/drink";
 
@@ -20,12 +20,11 @@ import {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 9;
 
-export default function FoodPage() {
+export default function FreshPage() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // dùng để lưu filter đã được parse từ URL, sẽ được truyền vào useDrinks để fetch dữ liệu
   const filters: FilterParams = useMemo(() => 
     parseUrlParamsToFilters(searchParams), 
     [searchParams]
@@ -36,7 +35,7 @@ export default function FoodPage() {
 
   const pageSize = DEFAULT_PAGE_SIZE;
 
-  const { drinks, loading, error, totalPages } = useDrinks(
+  const { fresh, loading, error, totalPages } = useFresh(
     filters,
     currentPage,
     pageSize
@@ -48,7 +47,7 @@ export default function FoodPage() {
 
     const query = params.toString();
 
-    router.push(`/drink${query ? `?${query}` : ""}`);
+    router.push(`/fresh${query ? `?${query}` : ""}`);
   };
 
   return (
@@ -60,10 +59,10 @@ export default function FoodPage() {
 
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-5xl">🥤</span>
-            <h1 className="text-4xl font-bold">Drink</h1>
+            <span className="text-5xl">🥬</span>
+            <h1 className="text-4xl font-bold">Fresh</h1>
           </div>
-          <p className="text-gray-600 text-lg">Quên bạn với những thức uống tươi mát và ngon lành</p>
+          <p className="text-gray-600 text-lg">Những sản phẩm tươi sạch, dinh dưỡng cao được chọn lọc kỹ lưỡng</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -79,9 +78,9 @@ export default function FoodPage() {
             <ResultsDisplay
               loading={loading}
               error={error}
-              results={drinks}
-              productType="drink"
-              resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${drinks.length} sản phẩm` : undefined}
+              results={fresh}
+              productType="fresh"
+              resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
               showPagination={Object.keys(filters).length === 0}
               onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}

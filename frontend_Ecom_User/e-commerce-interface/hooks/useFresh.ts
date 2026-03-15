@@ -1,37 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DrinkService } from "@/service/DrinkService";
-import type { Drink, FilterParams } from "@/types/drink";
+import { FreshService } from "@/service/FreshService";
+import type { Fresh } from "@/types/fresh";
+import type { FilterParams } from "@/types/drink";
 
-interface UseDrinksResult {
-  drinks: Drink[];
+interface UseFreshResult {
+  fresh: Fresh[];
   loading: boolean;
   error: string | null;
   totalPages: number;
 }
 
-export function useDrinks(
+export function useFresh(
   filters: FilterParams,
   page: number,
   pageSize: number
-): UseDrinksResult {
+): UseFreshResult {
 
-  const [drinks, setDrinks] = useState<Drink[]>([]);
+  const [fresh, setFresh] = useState<Fresh[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
 
-    const fetchDrinks = async () => {
+    const fetchFresh = async () => {
       try {
         setLoading(true);
         setError(null);
 
         if (Object.keys(filters).length > 0) {
 
-          const filteredData = await DrinkService.filterDrinks(
+          const filteredData = await FreshService.filterFresh(
             filters.categories,
             filters.featured,
             filters.unit,
@@ -40,17 +41,17 @@ export function useDrinks(
             filters.region
           );
 
-          setDrinks(filteredData);   // nếu call api thì dlieu trả về (filteredData) sẽ được lưu vào setDrinks 
-          setTotalPages(1);  // vì dlieu trả vè ở backend ko làm phân trang nên nên nó để là 1 tức là tất cả sản phẩm sau khi filter sẽ được trả về 1 page duy nhất.
+          setFresh(filteredData);
+          setTotalPages(1);
 
         } else {
 
-          const response = await DrinkService.getAllDrinksPaginated(
+          const response = await FreshService.getAllFreshPaginated(
             page,
             pageSize
           );
 
-          setDrinks(response.data);
+          setFresh(response.data);
           setTotalPages(response.totalPages);
 
         }
@@ -69,12 +70,12 @@ export function useDrinks(
       }
     };
 
-    fetchDrinks();
+    fetchFresh();
 
   }, [filters, page, pageSize]);
 
   return {
-    drinks,
+    fresh,
     loading,
     error,
     totalPages

@@ -1,4 +1,4 @@
-export interface Drink {
+export interface Fresh {
   id: number
   name: string
   description: string
@@ -14,8 +14,8 @@ export interface Drink {
 }
 
 
-export interface PaginatedDrinkResponse {
-  data: Drink[]
+export interface PaginatedFreshResponse {
+  data: Fresh[]
   pageNumber: number
   pageSize: number
   totalRecords: number

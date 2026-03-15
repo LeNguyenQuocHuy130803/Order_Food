@@ -93,7 +93,7 @@ export function FilterSidebar({ onFilterChange, initialFilters, onIsOpenChange }
     if (onFilterChange) {
       const filters: FilterParams = {
         categories: categories.length > 0 ? categories : undefined,
-        featured: featured ? true : undefined,
+        featured: featured || undefined,
         minPrice: min ? parseInt(min) : undefined,
         maxPrice: max ? parseInt(max) : undefined,
         region: regions.length > 0 ? regions[0] : undefined,

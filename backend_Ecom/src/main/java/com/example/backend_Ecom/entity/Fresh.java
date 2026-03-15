@@ -1,7 +1,6 @@
 package com.example.backend_Ecom.entity;
 
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.FreshCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import java.time.LocalDateTime;
@@ -14,11 +13,11 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @Entity
-@Table(name = "drinks")
+@Table(name = "freshs")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Drink {
+public class Fresh {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -41,7 +40,7 @@ public class Drink {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Category category ;
+    private FreshCategory category;
 
     @Column(nullable = false)
     @Builder.Default
@@ -49,11 +48,13 @@ public class Drink {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Unit unit ;
+    @Builder.Default
+    private Unit unit = Unit.ITEM;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Region region ;
+    @Builder.Default
+    private Region region = Region.HA_NOI;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

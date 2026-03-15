@@ -1,6 +1,6 @@
 'use client';
 
-import DrinkCard from '@/app/components/drink_card';
+import ProductCard from '@/app/components/product-card';
 import type { Drink } from '@/types/drink';
 
 interface ResultsDisplayProps {
@@ -14,6 +14,7 @@ interface ResultsDisplayProps {
   onNextPage?: () => void;
   currentPage?: number;
   totalPages?: number;
+  productType?: 'drink' | 'food' | 'fresh'; // Để biết redirect tới loại nào
 }
 
 export function ResultsDisplay({
@@ -26,6 +27,7 @@ export function ResultsDisplay({
   onPreviousPage,
   onNextPage,
   currentPage = 1,
+  productType = 'drink',
   totalPages = 1,
 }: ResultsDisplayProps) {
   // ════════════════════════════════════════════════════════════════════════
@@ -100,8 +102,8 @@ export function ResultsDisplay({
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {results.map((drink) => (
-          <DrinkCard key={drink.id} {...drink} />
+        {results.map((product) => (
+          <ProductCard key={product.id} product={product} type={productType} />
         ))}
       </div>
 

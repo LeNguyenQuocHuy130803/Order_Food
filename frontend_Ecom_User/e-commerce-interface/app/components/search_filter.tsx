@@ -14,12 +14,6 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const router = useRouter();
 
-  // Clear input khi modal đóng
-  useEffect(() => {
-    if (!showSearch) {
-      setSearchQuery('');
-    }
-  }, [showSearch]);
 
   // ============================================================================
   // Handler: Thực hiện tìm kiếm
@@ -75,14 +69,6 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
               <Search className="w-6 h-6" />
             </button>
 
-            {/* Close Button - Icon X */}
-            <button
-              onClick={() => setShowSearch(false)}
-              className="absolute top-1/2 right-4 transform -translate-y-1/2 p-2 hover:bg-[#ff5528] hover:text-white rounded-full transition-all bg-gray-100"
-              title="Đóng"
-            >
-              <X className="w-6 h-6 text-gray-700" />
-            </button>
           </div>
         </div>
       </div>

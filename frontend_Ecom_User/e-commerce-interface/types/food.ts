@@ -1,4 +1,4 @@
-export interface Drink {
+export interface Food {
   id: number
   name: string
   description: string
@@ -14,8 +14,8 @@ export interface Drink {
 }
 
 
-export interface PaginatedDrinkResponse {
-  data: Drink[]
+export interface PaginatedFoodResponse {
+  data: Food[]
   pageNumber: number
   pageSize: number
   totalRecords: number

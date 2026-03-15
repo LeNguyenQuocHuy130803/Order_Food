@@ -39,7 +39,7 @@ export function Header() {
               <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Food
               </Link>
-              <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+              <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Fresh
               </Link>
               <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
