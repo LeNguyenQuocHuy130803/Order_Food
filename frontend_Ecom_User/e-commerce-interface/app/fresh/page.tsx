@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { Leaf } from "lucide-react";
 
 import { FilterSidebar } from "@/app/components/filter_sidebar";
-import { Footer } from "@/app/components/footer";
-import { Header } from "@/app/components/header";
+import { Footer } from "@/app/components/layout/footer";
+import { ProductHeader } from "@/app/components/layout/product-header";
+import { HeroBanner } from "@/app/components/hero-banner";
 import { ResultsDisplay } from "@/app/components/results-display";
 
 import { useFresh } from "@/hooks/useFresh";
@@ -20,10 +22,44 @@ import {
 const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 9;
 
+// Custom smooth scroll function with duration control
+const smoothScrollTo = (element: HTMLElement, duration: number = 1500, offset: number = -100) => {
+  const targetPosition = element.getBoundingClientRect().top + window.scrollY + offset;
+  const startPosition = window.scrollY;
+  const distance = targetPosition - startPosition;
+  const startTime = performance.now();
+
+  const animation = (currentTime: number) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Easing function for smooth deceleration
+    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    
+    window.scrollTo(0, startPosition + distance * easeProgress);
+    
+    if (progress < 1) {
+      requestAnimationFrame(animation);
+    }
+  };
+
+  requestAnimationFrame(animation);
+};
+
+const FRESH_CATEGORIES = [
+  { name: 'VEGETABLE', displayName: 'VEGETABLE' },
+  { name: 'FRUIT', displayName: 'FRUIT' },
+  { name: 'MEAT', displayName: 'MEAT' },
+  { name: 'SEAFOOD', displayName: 'SEAFOOD' },
+  { name: 'DAIRY', displayName: 'DAIRY' },
+  { name: 'HERB', displayName: 'HERB' },
+];
+
 export default function FreshPage() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const filterRef = useRef<HTMLDivElement>(null);
 
   const filters: FilterParams = useMemo(() => 
     parseUrlParamsToFilters(searchParams), 
@@ -31,7 +67,6 @@ export default function FreshPage() {
   );
 
   const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const pageSize = DEFAULT_PAGE_SIZE;
 
@@ -50,48 +85,54 @@ export default function FreshPage() {
     router.push(`/fresh${query ? `?${query}` : ""}`);
   };
 
+  // Smooth scroll to filter+products section when filters change
+  useEffect(() => {
+    if (Object.keys(filters).length > 0 && filterRef.current) {
+      setTimeout(() => {
+        smoothScrollTo(filterRef.current!, 1500); // 1.5 seconds slow scroll
+      }, 100);
+    }
+  }, [filters]);
+
   return (
     <main className="bg-background min-h-screen">
 
-      <Header />
+      <ProductHeader />
 
-      <div className="max-w-7xl mx-auto px-4 py-12 pt-22">
+      {/* Hero Banner */}
+      <HeroBanner
+        icon={Leaf}
+        badge="Giao lanh 30 phut"
+        headline="San pham tuoi sach moi ngay"
+        description="Nhung san pham tuoi sach, dinh duong cao duoc chon loc ky luong. Bat qua thuc pham tuoi tot nhat."
+        imageSrc="/image/fresh/bo-rau-cai.jpg"
+        imageAlt="Fresh produce"
+      />
 
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-5xl">🥬</span>
-            <h1 className="text-4xl font-bold">Fresh</h1>
-          </div>
-          <p className="text-gray-600 text-lg">Những sản phẩm tươi sạch, dinh dưỡng cao được chọn lọc kỹ lưỡng</p>
-        </div>
+      {/* Filter & Results Section */}
+      <div ref={filterRef}>
+        <FilterSidebar
+          onFilterChange={handleFilterChange}
+          initialFilters={filters}
+          categories={FRESH_CATEGORIES}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto px-4 py-12">
 
-          <FilterSidebar
-            onFilterChange={handleFilterChange}
-            initialFilters={filters}
-            onIsOpenChange={setIsSidebarOpen}
-          />
-
-          <div className={isSidebarOpen ? "lg:col-span-3" : "lg:col-span-4"}>
-
-            <ResultsDisplay
-              loading={loading}
-              error={error}
-              results={fresh}
-              productType="fresh"
-              resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
-              showPagination={Object.keys(filters).length === 0}
-              onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              currentPage={currentPage}
-              totalPages={totalPages}
-            />
-
-          </div>
+        <ResultsDisplay
+          loading={loading}
+          error={error}
+          results={fresh}
+          productType="fresh"
+          resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
+          showPagination={Object.keys(filters).length === 0}
+          onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+          onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
 
         </div>
-
       </div>
 
       <Footer />

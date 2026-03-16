@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { Footer } from '../components/footer'
+import { Footer } from '../components/layout/footer'
 import { SearchFilter } from '../components/search_filter'
 import { FilterSidebar } from '../components/filter_sidebar'
-import { Header } from '../components/header'
+import { Header } from '../components/layout/header'
 
 type Props = {}
 

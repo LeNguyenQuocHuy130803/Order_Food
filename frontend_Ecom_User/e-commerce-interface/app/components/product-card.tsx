@@ -4,7 +4,6 @@ import Image from "next/image"
 import { Heart } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 
 interface Product {
   id: number
@@ -21,12 +20,10 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, type }: ProductCardProps) {
   const [isFavorited, setIsFavorited] = useState(false)
-  const searchParams = useSearchParams()
 
   const { id, name, imageUrl, featured, price } = product
 
-  const detailHref =
-    `/${type}/${id}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+  const detailHref = `/${type}/${id}`
 
   return (
     <Link href={detailHref}>

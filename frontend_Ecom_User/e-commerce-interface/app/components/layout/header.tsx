@@ -1,22 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Menu, X, ShoppingCart, Search, Phone, Mail, MapPin, Clock, ChevronDown, User } from "lucide-react"
-import { Button } from "../components/ui/button"
-import { SearchFilter } from "./search_filter"
+import { Button } from "../ui/button"
+import { SearchFilter } from "../search_filter"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [cartCount] = useState(2)
   const [showSearch, setShowSearch] = useState(false)
+  const [scrollOpacity, setScrollOpacity] = useState(1)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const maxScroll = 300
+      const opacity = Math.max(0.5, 1 - scrollY / maxScroll)
+      setScrollOpacity(opacity)
+    }
+
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   return (
     <header className="w-full relative">
       <SearchFilter showSearch={showSearch} setShowSearch={setShowSearch} />
       
       {/* Main Header */}
-      <div className="bg-white shadow-md fixed top-0 left-0 right-0 z-50">
+      <div 
+        className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 transition-opacity duration-300"
+        style={{ opacity: scrollOpacity }}
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}

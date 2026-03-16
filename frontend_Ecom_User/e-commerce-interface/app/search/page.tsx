@@ -2,8 +2,8 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 
-import { Footer } from "@/app/components/footer";
-import { Header } from "@/app/components/header";
+import { Footer } from "@/app/components/layout/footer";
+import { Header } from "@/app/components/layout/header";
 import { ResultsDisplay } from "@/app/components/results-display";
 
 import { useSearch } from "@/hooks/useSearch";

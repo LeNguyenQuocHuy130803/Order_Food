@@ -46,7 +46,7 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
       />
 
       {/* Search Panel */}
-      <div className="fixed top-20 left-0 right-0 bg-white z-50">
+      <div className="fixed top-30 left-0 right-0 bg-white z-50">
         {/* Search Input Section */}
         <div className="container mx-auto px-4 py-6">
           <div className="relative">
