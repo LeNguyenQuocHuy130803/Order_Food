@@ -1,73 +1,30 @@
 
 import type { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
 import GoogleProvider from 'next-auth/providers/google'
 import GitHubProvider from 'next-auth/providers/github'
-import { API_URL } from '@/service/Constant';
-import { log } from 'console';
+import FacebookProvider from 'next-auth/providers/facebook'
+
+/**
+ * 🔐 NextAuth Configuration - OAuth ONLY
+ * 
+ * ⚠️ Email + Password login:
+ * KHÔNG dùng file này, dùng:
+ * ✅ /service/authService.ts → /api/auth/login/route.ts → Backend
+ * 
+ * OAuth login (Google, GitHub):
+ * ✅ Dùng file này → NextAuth callbacks → JWT session
+ */
 
 interface UserType {
   id: string;
   email: string;
   name: string;
   roles?: string[];
-  // accessToken: string; 
-  // refreshToken: string;
 }
+
 export const authOptions: NextAuthOptions = {
-  debug : true,
-    pages: {
-    signIn: '/login-page',
-  },
+  debug: true,
   providers: [
-    //  login bình thường với email + password
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email', placeholder: 'your@email.com' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {   // chạy và thông tin được hiển thị ở terminal 
-        //  ✅ Gọi API Route /api/auth/login (không gọi backend trực tiếp)
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password required')
-        }
-
-        try {
-          const res = await fetch(`${process.env.NEXTAUTH_URL}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          })
-
-          console.log( "📡 API Response:", res);
-
-          const data = await res.json()
-          
-          console.log( "du lieu la " , data );
-          
-
-          if (!res.ok) {
-            throw new Error(data.message || 'Login failed')
-          }
-
-          return {
-            id: data.user.id.toString(),
-            email: data.user.email,
-            name: data.user.username,
-            roles: data.user.roles,
-          } as UserType
-
-        } catch (error: any) {
-          console.error('❌ Authorize error:', error)
-          throw new Error(error.message || 'Login failed')
-        }
-      },
-    }),
-
     /**
      * Google OAuth Provider
      */
@@ -83,60 +40,45 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GITHUB_ID || '',
       clientSecret: process.env.GITHUB_SECRET || '',
     }),
+    /**
+   * facebook OAuth Provider
+   */
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_ID || '',
+      clientSecret: process.env.FACEBOOK_SECRET || '',
+    }),
   ],
+
 
   callbacks: {
     /**
-     * JWT Callback
-     * ✅ Nhận user từ authorize()
-     * ✅ Lưu user info vào token (KHÔNG lưu backend token)
-     * 
-     * trigger:
-     * - 'signIn': khi user đăng nhập
-     * - 'update': khi session.update() được gọi
+     * JWT Callback - Lưu user info vào token
      */
-    async jwt({ token, user, trigger, session }) {
-      // Khi user đăng nhập lần đầu (authorize trả về user)
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.email = user.email
         token.name = user.name
-        token.roles = (user as any).roles || []
       }
-
-      // Nếu trigger là 'update' và có session mới
-      if (trigger === 'update' && session) {
-        token.name = session.user?.name ?? token.name
-        token.roles = (session.user as any)?.roles ?? token.roles
-      }
-
       return token
     },
 
     /**
-     * Session Callback
-     * ✅ Nhận token từ jwt()
-     * ✅ Return session.user cho client
-     * ❌ KHÔNG return token backend
+     * Session Callback - Return session cho client
      */
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
         session.user.email = token.email as string
         session.user.name = token.name as string
-        // @ts-ignore
-        session.user.roles = token.roles
       }
       return session
     },
 
     /**
-     * SignIn Callback
-     * ✅ Cho phép user đăng nhập
+     * SignIn Callback - Cho phép OAuth users đăng nhập
      */
-    async signIn({ user, account, profile }) {
-      // ✅ Cho phép OAuth users
-      // Backend sẽ auto-create user nếu không tồn tại
+    async signIn() {
       return true
     },
   },

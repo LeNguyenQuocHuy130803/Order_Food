@@ -45,26 +45,6 @@ public class FreshController {
     }
 
     /**
-     * Advanced Search - Tìm kiếm nâng cao theo tên, description, category, region
-     * GET /api/fresh/search?name=rau&description=cải&category=VEGETABLE&region=HA_NOI
-     * 
-     * Ví dụ:
-     *   /search?name=rau → tìm tên chứa "rau"
-     *   /search?description=xanh → tìm description chứa "xanh"
-     *   /search?category=VEGETABLE → tìm category VEGETABLE
-     *   /search?region=HA_NOI → tìm sản phẩm ở Hà Nội
-     *   /search?name=rau&region=HA_NOI → kết hợp tên + khu vực
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<FreshResponseDto>> advancedSearch(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) FreshCategory category,
-            @RequestParam(required = false) Region region) {
-        return ResponseEntity.ok(freshService.advancedSearch(name, description, category, region));
-    }
-
-    /**
      * Filter - Lọc sản phẩm theo nhiều tiêu chí (tất cả optional)
      * GET /api/fresh/filter?categories=VEGETABLE&featured=true&unit=KG&minPrice=10000&maxPrice=100000&region=HA_NOI
      * 

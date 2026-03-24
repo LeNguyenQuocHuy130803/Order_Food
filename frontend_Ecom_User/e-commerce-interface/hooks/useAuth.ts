@@ -1,36 +1,46 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'  // ✅ Import useSession và signOut từ NextAuth . 1 là lấy thông tin session, 1 là để logout
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { authService, type AuthUser } from '@/service/authService'
 
-export interface Auth {  // định nghĩa kiểu trả về của hook useAuth
-  user: {
-    id: string
-    name?: string | null
-    email?: string | null
-    roles?: string[]
-  } | null   // nếu user đã login thì trả về các thông tin user như trên , nếu chưa login thì trả về null
-  loading: boolean  // ✅ Thêm trạng thái loading để biết khi nào session đang được xác thực 
-  isAuthenticated: boolean  // ✅ Thêm isAuthenticated để dễ dàng kiểm tra nếu user đã login hay chưa
-  logout: () => Promise<void>   // ✅ Hàm logout để đăng xuất người dùng
+export interface Auth {
+  user: AuthUser | null
+  loading: boolean
+  isAuthenticated: boolean
+  logout: () => Promise<void>
 }
 
-export function useAuth(): Auth {   // export nó ra để các component khác có thể sử dụng , dùng để lấy thông tin user hiện tại và trạng thái xác thực đã đăng nhập hay chưa
-  const { data: session, status } = useSession() // gọi useSession để lấy thông tin session hiện tại và dùng status để lấy : trạng thái xác thực (loading, authenticated, unauthenticated) 
+export function useAuth(): Auth {
+  const [user, setUser] = useState<AuthUser | null>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
+  useEffect(() => {
+    // ✅ Lấy user từ localStorage khi component mount
+    const currentUser = authService.getCurrentUser()
+    setUser(currentUser)
+    setLoading(false)
 
-  // hàm dưới để log out người dùng, xóa session và redirect về trang login
+    // Kiểm tra nếu chưa login
+    if (!currentUser) {
+      console.log('ℹ️ [useAuth] User not authenticated')
+    } else {
+      console.log('✅ [useAuth] User authenticated:', currentUser.username)
+    }
+  }, [])   // Chỉ chạy 1 lần khi component mount ( tức là componen nào dùng nó thì nó sẽ chạy 1 lần khi component đó mount)
+
   const logout = async () => {
-    // ✅ Gọi /api/auth/logout để xóa HTTP-only cookies
-    await fetch('/api/auth/logout', { method: 'POST' })
-    
-    // ✅ Logout khỏi NextAuth
-    await signOut({ callbackUrl: '/login-page' })
+    console.log('🚪 [useAuth] Logging out...')
+    await authService.logout()
+    setUser(null)
+    router.push('/')
   }
 
-return {
-  user: session?.user || null,           // Lấy user từ session, nếu không có = null
-  loading: status === 'loading',         // true nếu status = 'loading'
-  isAuthenticated: status === 'authenticated', // true nếu status = 'authenticated'
-  logout,                                 // Hàm logout bên trên
+  return {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    logout,
   }
 }

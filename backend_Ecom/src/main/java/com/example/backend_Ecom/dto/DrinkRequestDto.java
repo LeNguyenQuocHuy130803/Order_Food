@@ -1,7 +1,6 @@
 package com.example.backend_Ecom.dto;
 
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +8,6 @@ import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "DTO for drink request (create/update)")
 @Data
@@ -36,7 +34,7 @@ private Long price;
     private String imageUrl;
 
     @Schema(description = "Drink category", example = "COFFEE")
-    private Category category;
+    private DrinkCategory category;
 
     @Schema(description = "Is featured/prominent", example = "true")
     private Boolean featured;

@@ -1,7 +1,6 @@
 package com.example.backend_Ecom.dto;
 
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,7 +26,7 @@ public class DrinkResponseDto {
 
     private String imageUrl;
 
-    private Category category;
+    private DrinkCategory category;
 
     private Boolean featured;
 

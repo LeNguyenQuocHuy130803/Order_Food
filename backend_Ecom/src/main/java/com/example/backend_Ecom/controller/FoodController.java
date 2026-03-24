@@ -45,26 +45,6 @@ public class FoodController {
     }
 
     /**
-     * Advanced Search - Tìm kiếm nâng cao theo tên, description, category, region
-     * GET /api/foods/search?name=cơm&description=gà&category=RICE&region=HA_NOI
-     * 
-     * Ví dụ:
-     *   /search?name=cơm → tìm tên chứa "cơm"
-     *   /search?description=gà → tìm description chứa "gà"
-     *   /search?category=RICE → tìm category RICE
-     *   /search?region=HA_NOI → tìm sản phẩm ở Hà Nội
-     *   /search?name=cơm&region=HA_NOI → kết hợp tên + khu vực
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<FoodResponseDto>> advancedSearch(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) FoodCategory category,
-            @RequestParam(required = false) Region region) {
-        return ResponseEntity.ok(foodService.advancedSearch(name, description, category, region));
-    }
-
-    /**
      * Filter - Lọc sản phẩm theo nhiều tiêu chí (tất cả optional)
      * GET /api/foods/filter?categories=RICE&featured=true&unit=CUP&minPrice=50000&maxPrice=200000&region=HA_NOI
      * 

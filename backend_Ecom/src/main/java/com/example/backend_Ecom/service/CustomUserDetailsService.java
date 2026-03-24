@@ -24,6 +24,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Load user details by email
+     * 
+     * Note: Method name is loadUserByUsername (from Spring interface), but parameter is EMAIL not username.
+     * This is intentional - we authenticate users with EMAIL + PASSWORD, not username + password.
+     * Spring Security requires this method name from the UserDetailsService interface.
+     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)

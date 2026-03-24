@@ -1,4 +1,4 @@
-# 🚀 HƯỚNG DẪN FRONTEND - API SEARCH & FILTER
+# 🚀 HƯỚNG DẪN FRONTEND - API FILTER
 
 ## 📌 BASE URL
 ```
@@ -7,72 +7,7 @@ http://localhost:8080/api/drinks
 
 ---
 
-## 1️⃣ **TÌM KIẾM NÂNG CAO (SEARCH)**
-
-### Endpoint
-```
-GET /api/drinks/search?name={keyword}&description={keyword}&category={category}&region={region}
-```
-
-### Tham số (tất cả optional)
-| Tham số | Giá trị | Ví dụ |
-|--------|--------|-------|
-| name | Từ khóa trong tên | coffee |
-| description | Từ khóa trong mô tả | black |
-| category | COFFEE, MILK_TEA, JUICE, TEA | COFFEE |
-| region | HA_NOI, HO_CHI_MINH, DA_NANG, HAI_PHONG, CAN_THO, ... | HA_NOI |
-
-### Ví dụ Request
-
-**Tìm theo tên:**
-```
-GET /api/drinks/search?name=coffee
-```
-
-**Tìm theo description:**
-```
-GET /api/drinks/search?description=black
-```
-
-**Tìm theo category:**
-```
-GET /api/drinks/search?category=COFFEE
-```
-
-**Tìm theo khu vực:**
-```
-GET /api/drinks/search?region=HA_NOI
-```
-
-**Kết hợp tên + region:**
-```
-GET /api/drinks/search?name=coffee&region=HA_NOI
-```
-
-**Kết hợp cả 4 tiêu chí:**
-```
-GET /api/drinks/search?name=coffee&description=strong&category=COFFEE&region=HA_NOI
-```
-
-### Response (200 OK)
-```json
-[
-  {
-    "id": 1,
-    "name": "Cà phê Đen",
-    "description": "Strong black coffee with a rich aroma",
-    "price": 25000,
-    "category": "COFFEE",
-    "featured": true,
-    "unit": "CUP",
-    "region": "HA_NOI",
-    ...
-  }
-]
-```
-
-
-## 2️⃣ **LỌC SẢN PHẨM (FILTER)**
+## **LỌC SẢN PHẨM (FILTER)**
 
 ### Endpoint
 ```
@@ -164,29 +99,6 @@ GET /api/drinks/filter?minPrice=500000&maxPrice=50000
 
 ## �️ **JAVASCRIPT/REACT EXAMPLES**
 
-### Advanced Search
-```javascript
-// Function advanced search
-const advancedSearch = (filters) => {
-  const params = new URLSearchParams();
-  
-  if (filters.name) params.append('name', filters.name);
-  if (filters.description) params.append('description', filters.description);
-  if (filters.category) params.append('category', filters.category);
-  if (filters.region) params.append('region', filters.region);
-  
-  fetch(`http://localhost:8080/api/drinks/search?${params}`)
-    .then(res => res.json())
-    .then(data => console.log(data))
-    .catch(err => console.error(err));
-};
-
-// Ví dụ sử dụng
-advancedSearch({
-  name: 'coffee',
-  region: 'HA_NOI'
-});
-```
 
 ### Filter - Đơn giản
 ```javascript

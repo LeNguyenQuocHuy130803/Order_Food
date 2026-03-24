@@ -18,5 +18,6 @@ public class RegisterResponseDto {
      String email;
      String accessToken;
      List<String> roles;
+     String avatar;
 
 }

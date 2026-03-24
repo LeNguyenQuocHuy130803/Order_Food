@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Menu, X, ShoppingCart, Search, Phone, Mail, MapPin, Clock, ChevronDown, User } from "lucide-react"
 import { Button } from "../ui/button"
 import { SearchFilter } from "../search_filter"
+import { useAuth } from "@/hooks/useAuth"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [cartCount] = useState(2)
   const [showSearch, setShowSearch] = useState(false)
   const [scrollOpacity, setScrollOpacity] = useState(1)
+  const { user, loading, isAuthenticated, logout } = useAuth()
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -84,18 +88,64 @@ export function Header() {
             </nav>
 
             {/* Right Side */}
-            <div className="flex items-center gap-1 pr-10">
+            <div className="flex items-center gap-3 pr-10">
               <button 
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors" 
                 onClick={() => setShowSearch(!showSearch)}
               >
                 <Search className="w-5 h-5" />
               </button>
-              <Link href="/login-page" className="hidden md:flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f5] hover:bg-[#ff5528] hover:text-white transition-colors">
-                <User className="w-5 h-5" />
-                <span className="text-sm font-semibold">Đăng nhập</span>
-              </Link>
-              <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#ff5528] text-white">
+
+              {/* User Avatar or Login Button */}
+              {!loading && isAuthenticated && user ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="relative w-10 h-10 rounded-full border-2 border-[#ff5528] overflow-hidden hover:border-[#e64a22] transition-colors flex items-center justify-center bg-gray-200"
+                  >
+                    <Image
+                      src={user.avatar || '/image/avatarNull/avatarNull.jpg'}
+                      alt={user.username}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  </button>
+
+                  {/* User Menu Dropdown */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 top-12 w-52 bg-white shadow-2xl rounded-lg z-50 border border-gray-100">
+                      <div className="px-4 py-3 border-b border-gray-200">
+                        <p className="font-semibold text-[#0d0d0d] truncate">{user.username}</p>
+                        <p className="text-xs text-gray-600 truncate">{user.email}</p>
+                      </div>
+                      <Link
+                        href="/dashboard-employers"
+                        className="block px-4 py-3 hover:bg-[#f5f5f5] hover:text-[#ff5528] transition-colors text-sm"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <button
+                        onClick={async () => {
+                          setShowUserMenu(false)
+                          await logout()
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 transition-colors border-t border-gray-200 text-sm"
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href="/login-page" className="hidden md:flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f5] hover:bg-[#ff5528] hover:text-white transition-colors">
+                  <User className="w-5 h-5" />
+                  <span className="text-sm font-semibold">Đăng nhập</span>
+                </Link>
+              )}
+
+              <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#ff5528] text-white hover:bg-[#e64a22] transition-colors">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#ffb936] text-[#0d0d0d] text-xs font-bold rounded-full flex items-center justify-center">

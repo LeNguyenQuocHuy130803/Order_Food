@@ -3,6 +3,7 @@ package com.example.backend_Ecom.entity;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.backend_Ecom.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -55,4 +56,22 @@ public class User {
     @Column(name = "is_account_locked", nullable = false)
     @Builder.Default
     private Boolean isAccountLocked = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private UserStatus status = UserStatus.ACTIVE;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean emailVerified = false;
+
+    @Column(name = "last_login")
+    private LocalDateTime lastLogin;
+
+    @Column(name = "avatar_url")
+    private String avatar;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<Address> addresses;
 }

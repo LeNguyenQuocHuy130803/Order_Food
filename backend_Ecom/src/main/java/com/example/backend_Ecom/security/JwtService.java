@@ -85,7 +85,11 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String extractUsername(String token) {
+    /**
+     * Extract email from JWT token (stored as subject)
+     * Note: Despite Spring Security's naming conventions, this extracts EMAIL not username
+     */
+    public String extractEmail(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -105,9 +109,9 @@ public class JwtService {
      * Validate access token
      */
     public Boolean isTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
+        final String email = extractEmail(token);
         final String tokenType = extractTokenType(token);
-        return (username.equals(userDetails.getUsername()))
+        return (email.equals(userDetails.getUsername()))
                 && !isTokenExpired(token)
                 && "access_token".equals(tokenType);
     }
@@ -116,10 +120,10 @@ public class JwtService {
      * Validate refresh token
      */
     public Boolean isRefreshTokenValid(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
+        final String email = extractEmail(token);
         final String tokenType = extractTokenType(token);
 
-        return (username.equals(userDetails.getUsername()))
+        return (email.equals(userDetails.getUsername()))
                 && !isTokenExpired(token)
                 && "refresh_token".equals(tokenType);
     }

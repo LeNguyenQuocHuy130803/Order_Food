@@ -26,4 +26,6 @@ public class RegisterRequestDto {
     @NotBlank(message = "Phone number cannot be empty")
     @Pattern(regexp = "\\d{10}", message = "Phone number must be exactly 10 digits")
     private String phoneNumber;
+
+    private String avatar;
 }

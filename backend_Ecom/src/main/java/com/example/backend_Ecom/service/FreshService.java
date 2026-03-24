@@ -140,14 +140,6 @@ public class FreshService {
                 .build();
     }
 
-    public List<FreshResponseDto> advancedSearch(String name, String description, FreshCategory category, Region region) {
-        log.info("Advanced search - name: {}, description: {}, category: {}, region: {}", name, description, category, region);
-        return freshRepository.findAll(FreshSpecification.advancedSearchCriteria(name, description, category, region))
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
     public List<FreshResponseDto> filterFreshProducts(List<FreshCategory> categories, Boolean featured, 
                                                       Unit unit, Long minPrice, Long maxPrice, Region region) {
         log.info("Filtering fresh products - categories: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 

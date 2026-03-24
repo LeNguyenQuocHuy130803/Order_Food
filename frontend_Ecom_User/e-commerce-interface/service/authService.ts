@@ -1,107 +1,159 @@
-// /**
-//  * Auth Service - Centralized authentication API calls
-//  */
+/**
+ * Auth Service - Gọi backend Spring Boot JWT API
+ * Tokens lưu ở HTTP-Only Cookies (server-side, bảo mật)
+ * User info lưu ở localStorage (safe)
+ */
 
-// import apiClient from '../lib/api/api-client-advanced'
+export interface LoginCredentials {
+  email: string
+  password: string
+}
 
-// export interface LoginCredentials {
-//   email: string
-//   password: string
-// }
+export interface LoginResponse {
+  id: number
+  email: string
+  username: string
+  roles: string[]
+  accessToken: string
+  refreshToken: string
+}
 
-// export interface LoginResponse {
-//   accessToken: string
-//   id: number
-//   roles: string[]
-//   username: string
-// }
+export interface AuthUser {
+  id: number
+  username: string
+  email: string
+  roles: string[]
+  avatar?: string
+}
 
-// export interface AuthUser {
-//   id: number
-//   username: string
-//   roles: string[]
-// }
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 
-// /**
-//  * Login user with username/email and password
-//  */
-// async function loginUser(credentials: LoginCredentials): Promise<LoginResponse> {
-//   // Input sanitization
-//   const sanitizedCredentials = {
-//     email: credentials.email.trim(),
-//     password: credentials.password.trim(),
-//   }
+/**
+ * Login user - gọi /api/auth/login (route.ts)
+ * route.ts sẽ forward tới backend Spring Boot
+ * route.ts sẽ set HTTP-Only cookies
+ */
+export async function loginUser(credentials: LoginCredentials): Promise<AuthUser> {
+  const sanitizedCredentials = {
+    email: credentials.email.trim(),
+    password: credentials.password.trim(),
+  }
 
-//   try {
-//     // apiClient sử dụng Axios để login (logic đó ở file index trong lib -> api để lựa chọn là tự refresh token ) - trả về data trực tiếp từ response interceptor
-//     // khi user nhấn login -> loginform gọi đến hook useLogin -> trong useLogin gọi đến authService.loginUser() -> authService gọi: apiClient.post('/auth/login', {...})
-//     // apiclient sẽ tự động Thêm access_token vào header (nếu có) sau đó gửi request ta muốn login đên sever ( nếu token hết hạn thì sẽ tự động gọi API refresh token để lấy token mới rồi retry request login này mà không bị đá ra khỏi hệ thống, chỉ khi nào refresh token cũng hết hạn thì mới bị đá ra khỏi hệ thống)  -> sau đó nhận response trả về
-//     // sau khi useLogin nhân được response trả về từ authService.loginUser() thì sẽ gọi authService.saveUserData(response) để lưu token và thông tin user vào localStorage, rồi gọi refreshUser() để cập nhật lại thông tin user trong context, cuối cùng là chuyển hướng về dashboard
-//     const response: LoginResponse = await apiClient.post('/auth/login', sanitizedCredentials)
-//     return response
-//   } catch (error: any) {
-//     const errorMessage =
-//       error.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
-//     throw new Error(errorMessage)
-//   }
-// }
+  try {
+    console.log(`🚀 [authService] Calling /api/auth/login`)
+    
+    // ✅ Gọi route.ts thay vì backend trực tiếp
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sanitizedCredentials),
+      credentials: 'include', // 🔒 Gửi cookies
+    })
 
-// /**
-//  * Get current user info từ localStorage
-//  */
-// function getCurrentUser(): AuthUser | null {
-//   if (typeof window === 'undefined') return null
+    console.log(`📡 [authService] Response status: ${response.status}`)
 
-//   const userId = localStorage.getItem('userId')
-//   const username = localStorage.getItem('username')
-//   const roles = localStorage.getItem('roles')
+    if (!response.ok) {
+      const error = await response.json()
+      console.error(`❌ [authService] Error:`, error)
+      throw new Error(error.message || 'Login failed')
+    }
 
-//   if (!userId || !username) return null
+    // ✅ route.ts trả về user info (tokens ở cookies)
+    const data = await response.json()
+    console.log(`✅ [authService] Login success:`, {
+      id: data.user.id,
+      email: data.user.email,
+      username: data.user.username,
+      roles: data.user.roles,
+        avatar: data.user.avatar,
+    })
+    
+    return data.user
+  } catch (error: any) {
+    const errorMessage = error.message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
+    console.error(`❌ [authService] Exception:`, errorMessage)
+    throw new Error(errorMessage)
+  }
+}
 
-//   return {
-//     id: parseInt(userId, 10),
-//     username,
-//     roles: roles ? JSON.parse(roles) : [],
-//   }
-// }
+/**
+ * Lưu user data vào localStorage (CHỈ user info)
+ * Tokens lưu ở HTTP-Only Cookies (server-side)
+ */
+export function saveUserData(user: AuthUser): void {
+  if (typeof window === 'undefined') return
 
-// /**
-//  * Save user data to localStorage
-//  */
-// function saveUserData(data: LoginResponse): void {
-//   if (typeof window === 'undefined') return
+  localStorage.setItem('userId', user.id.toString())
+  localStorage.setItem('username', user.username)
+  localStorage.setItem('email', user.email)
+  localStorage.setItem('roles', JSON.stringify(user.roles))
+  if (user.avatar) {
+    localStorage.setItem('avatar', user.avatar)
+  }
+  
+  console.log(`💾 [authService] User data saved to localStorage`)
+}
 
-//   localStorage.setItem('accessToken', data.accessToken)
-//   localStorage.setItem('userId', data.id.toString())
-//   localStorage.setItem('username', data.username)
-//   localStorage.setItem('roles', JSON.stringify(data.roles))
-// }
+/**
+ * Lấy current user từ localStorage
+ */
+export function getCurrentUser(): AuthUser | null {
+  if (typeof window === 'undefined') return null
 
-// /**
-//  * Logout user - clear all data
-//  */
-// function logout(): void {
-//   if (typeof window === 'undefined') return
+  const userId = localStorage.getItem('userId')
+  const username = localStorage.getItem('username')
+  const email = localStorage.getItem('email')
+  const roles = localStorage.getItem('roles')
+  const avatar = localStorage.getItem('avatar')
 
-//   localStorage.removeItem('accessToken')
-//   localStorage.removeItem('userId')
-//   localStorage.removeItem('username')
-//   localStorage.removeItem('roles')
-// }
+  if (!userId || !username) return null
 
-// /**
-//  * Check if user is authenticated
-//  */
-// function isAuthenticated(): boolean {
-//   if (typeof window === 'undefined') return false
+  return {
+    id: parseInt(userId, 10),
+    username,
+    email: email || '',
+    roles: roles ? JSON.parse(roles) : [],
+    avatar: avatar || undefined,
+  }
+}
 
-//   return !!localStorage.getItem('accessToken')
-// }
+/**
+ * Logout user - xóa localStorage + cookies
+ */
+export async function logout(): Promise<void> {
+  if (typeof window === 'undefined') return
 
-// export const authService = {
-//   loginUser,
-//   getCurrentUser,
-//   saveUserData,
-//   logout,
-//   isAuthenticated,
-// }
+  localStorage.removeItem('userId')
+  localStorage.removeItem('username')
+  localStorage.removeItem('email')
+  localStorage.removeItem('roles')
+  localStorage.removeItem('avatar')
+  
+  // ✅ Call logout route để clear cookies
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch (error) {
+    console.error('Logout request failed:', error)
+  }
+
+  console.log(`🚪 [authService] User logged out`)
+}
+
+/**
+ * Check user đã authenticate hay chưa
+ */
+export function isAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false
+  return !!localStorage.getItem('userId')
+}
+
+export const authService = {
+  loginUser,
+  getCurrentUser,
+  saveUserData,
+  logout,
+  isAuthenticated,
+}

@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) NOT NULL,
     phone_number VARCHAR(15) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    avatar_url VARCHAR(500) NULL,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    email_verified BOOLEAN DEFAULT FALSE,
+    last_login TIMESTAMP NULL,
+    failed_login_attempts INT DEFAULT 0 NOT NULL,
+    is_account_locked BOOLEAN DEFAULT FALSE,
+    lockout_time TIMESTAMP NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -22,6 +29,31 @@ CREATE TABLE IF NOT EXISTS users_roles (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     FOREIGN KEY (role_id) REFERENCES roles (id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, role_id)
+);
+
+-- Create addresses table
+CREATE TABLE IF NOT EXISTS addresses (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    address TEXT NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+-- Create verification_tokens table
+CREATE TABLE IF NOT EXISTS verification_tokens (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    otp VARCHAR(6) NOT NULL,
+    expiry_date TIMESTAMP NOT NULL,
+    otp_expiry TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 -- Insert default roles if they do not exist
@@ -45,7 +77,7 @@ WHERE NOT EXISTS (
 
 -- Insert default admin user if it does not exist
 INSERT INTO users (email, username, password, phone_number)
-SELECT 'admin@example.com', 'admin', '191205', '0765233951'
+SELECT 'huyhoanglenguyen8@gmail.com', 'huyhoanglenguyen8', 'Huyle130803@', '0765233951'
 WHERE NOT EXISTS (
     SELECT 1 FROM users WHERE username = 'admin'
 );

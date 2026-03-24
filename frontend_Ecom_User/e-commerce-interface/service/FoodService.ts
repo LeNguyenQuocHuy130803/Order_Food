@@ -1,179 +1,130 @@
-import { API_BASE_URL, FOOD_ENDPOINTS } from "@/lib/api";
+import axios from "axios";
 import type { Food, PaginatedFoodResponse } from "@/types/food";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
  * FoodService - Tách logic API khỏi UI
- * Tất cả các request tới backend được định nghĩa ở đây
+ * Dùng Axios + async/await
  */
 
+/**
+ * Lấy danh sách sản phẩm có phân trang
+ * @param page - Trang hiện tại (1-based)
+ * @param pageSize - Số item trên 1 trang (mặc định 9)
+ * @returns PaginatedFoodResponse từ backend
+ */
+export const getAllFoodsPaginated = async (
+  page: number = 1,
+  pageSize: number = 9
+): Promise<PaginatedFoodResponse> => {
+  try {
+    const res = await axios.get<PaginatedFoodResponse>(
+      `${API_URL}/foods/paging`,
+      {
+        params: {
+          page,
+          size: pageSize,
+        },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error in getAllFoodsPaginated:", error);
+    throw error;
+  }
+};
+
+/**
+ * Lấy sản phẩm theo ID
+ * @param id - ID của sản phẩm
+ * @returns Food object
+ */
+export const getFoodById = async (id: number): Promise<Food> => {
+  try {
+    const res = await axios.get<Food>(`${API_URL}/foods/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error in getFoodById:", error);
+    throw error;
+  }
+};
+
+/**
+ * Tìm kiếm sản phẩm
+ * @param name - Tìm theo tên
+ * @param description - Tìm theo description
+ * @param category - Lọc theo category
+ * @param region - Lọc theo khu vực
+ * @returns Danh sách Food matching criteria
+ */
+export const searchFoods = async (
+  name?: string,
+  description?: string,
+  category?: string,
+  region?: string
+): Promise<Food[]> => {
+  try {
+    const res = await axios.get<Food[]>(`${API_URL}/foods/search`, {
+      params: {
+        ...(name && { name }),
+        ...(description && { description }),
+        ...(category && { category }),
+        ...(region && { region }),
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error in searchFoods:", error);
+    throw error;
+  }
+};
+
+/**
+ * Lọc sản phẩm theo nhiều tiêu chí
+ * @param categories - Danh sách categories
+ * @param featured - Chỉ lấy featured
+ * @param unit - Lọc theo unit
+ * @param minPrice - Giá tối thiểu
+ * @param maxPrice - Giá tối đa
+ * @param region - Khu vực
+ * @returns Danh sách Food matching filters
+ */
+export const filterFoods = async (
+  categories?: string[],
+  featured?: boolean,
+  unit?: string,
+  minPrice?: number,
+  maxPrice?: number,
+  region?: string
+): Promise<Food[]> => {
+  try {
+    const params: Record<string, any> = {};
+
+    if (categories && categories.length > 0) {
+      params.categories = categories;
+    }
+    if (featured !== undefined) {
+      params.featured = featured;
+    }
+    if (unit) params.unit = unit;
+    if (minPrice !== undefined) params.minPrice = minPrice;
+    if (maxPrice !== undefined) params.maxPrice = maxPrice;
+    if (region) params.region = region;
+
+    const res = await axios.get<Food[]>(`${API_URL}/foods/filter`, {
+      params,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error in filterFoods:", error);
+    throw error;
+  }
+};
+
 export const FoodService = {
-  /**
-   * Lấy danh sách sản phẩm có phân trang
-   * @param page - Trang hiện tại (1-based, backend yêu cầu)
-   * @param pageSize - Số item trên 1 trang (mặc định 10)
-   * @returns PaginatedFoodResponse từ backend
-   */
-  async getAllFoodsPaginated(
-    page: number = 1,
-    pageSize: number = 9
-  ): Promise<PaginatedFoodResponse> {
-    try {
-      const url = new URL(
-        `${API_BASE_URL}${FOOD_ENDPOINTS.GET_ALL_PAGINATED}`
-      );
-      url.searchParams.append("page", page.toString());
-      url.searchParams.append("size", pageSize.toString());
-
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch foods: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: PaginatedFoodResponse = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error in FoodService.getAllFoodsPaginated:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Lấy sản phẩm theo ID
-   * @param id - ID của sản phẩm
-   * @returns Food object
-   */
-  async getFoodById(id: number): Promise<Food> {
-    try {
-      const url = `${API_BASE_URL}${FOOD_ENDPOINTS.GET_BY_ID}/${id}`;
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch food: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: Food = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error in FoodService.getFoodById:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Tìm kiếm nâng cao sản phẩm
-   * @param name - Tìm theo tên
-   * @param description - Tìm theo description
-   * @param category - Lọc theo category
-   * @param region - Lọc theo khu vực
-   * @returns Danh sách Food matching criteria
-   */
-  async searchFoods(
-    name?: string,
-    description?: string,
-    category?: string,
-    region?: string
-  ): Promise<Food[]> {
-    try {
-      const url = new URL(`${API_BASE_URL}${FOOD_ENDPOINTS.SEARCH}`);
-
-      if (name) url.searchParams.append("name", name);
-      if (description) url.searchParams.append("description", description);
-      if (category) url.searchParams.append("category", category);
-      if (region) url.searchParams.append("region", region);
-
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to search foods: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: Food[] = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error in FoodService.searchFoods:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Lọc sản phẩm theo nhiều tiêu chí
-   * @param categories - Danh sách categories
-   * @param featured - Chỉ lấy featured
-   * @param unit - Lọc theo unit
-   * @param minPrice - Giá tối thiểu
-   * @param maxPrice - Giá tối đa
-   * @param region - Khu vực
-   * @returns Danh sách Food matching filters
-   */
-  async filterFoods(
-    categories?: string[],
-    featured?: boolean,
-    unit?: string,
-    minPrice?: number,
-    maxPrice?: number,
-    region?: string
-  ): Promise<Food[]> {
-    try {
-      const url = new URL(`${API_BASE_URL}${FOOD_ENDPOINTS.FILTER}`);
-
-      if (categories && categories.length > 0) {
-        categories.forEach((cat) =>
-          url.searchParams.append("categories", cat)
-        );
-      }
-      if (featured !== undefined) {
-        url.searchParams.append("featured", featured.toString());
-      }
-      if (unit) url.searchParams.append("unit", unit);
-      if (minPrice !== undefined) url.searchParams.append("minPrice", minPrice.toString());
-      if (maxPrice !== undefined) url.searchParams.append("maxPrice", maxPrice.toString());
-      if (region) url.searchParams.append("region", region);
-
-      const response = await fetch(url.toString(), {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to filter foods: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: Food[] = await response.json();
-      return data;
-    } catch (error) {
-      console.error("Error in FoodService.filterFoods:", error);
-      throw error;
-    }
-  },
+  getAllFoodsPaginated,
+  getFoodById,
+  searchFoods,
+  filterFoods,
 };

@@ -4,8 +4,7 @@ import com.example.backend_Ecom.dto.DrinkRequestDto;
 import com.example.backend_Ecom.dto.DrinkResponseDto;
 import com.example.backend_Ecom.dto.PaginatedDrinkResponseDto;
 import com.example.backend_Ecom.entity.Drink;
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import com.example.backend_Ecom.exception.AppException;
@@ -56,7 +55,7 @@ public class DrinkService {
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : Category.COFFEE)
+                .category(request.getCategory() != null ? request.getCategory() : DrinkCategory.COFFEE)
                 .featured(request.getFeatured() != null ? request.getFeatured() : false)
                 .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
                 .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
@@ -145,16 +144,8 @@ public class DrinkService {
                 .build();
     }
 
-    public List<DrinkResponseDto> advancedSearch(String name, String description, Category category, Region region) {
-        log.info("Advanced search - name: {}, description: {}, category: {}, region: {}", name, description, category, region);
-        return drinkRepository.findAll(DrinkSpecification.advancedSearchCriteria(name, description, category, region))
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<DrinkResponseDto> filterDrinks(List<Category> categories, Boolean featured, 
-                                                Unit unit, Long minPrice, Long maxPrice, Region region) {
+    public List<DrinkResponseDto> filterDrinks(List<DrinkCategory> categories, Boolean featured,
+                                               Unit unit, Long minPrice, Long maxPrice, Region region) {
         log.info("Filtering drinks - categories: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 
                   categories, featured, unit, minPrice, maxPrice, region);
         

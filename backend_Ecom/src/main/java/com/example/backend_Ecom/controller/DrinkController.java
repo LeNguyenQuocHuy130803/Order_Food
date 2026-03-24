@@ -4,8 +4,7 @@ import com.example.backend_Ecom.dto.DrinkRequestDto;
 import com.example.backend_Ecom.dto.DrinkResponseDto;
 import com.example.backend_Ecom.dto.MessageResponseDto;
 import com.example.backend_Ecom.dto.PaginatedDrinkResponseDto;
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import com.example.backend_Ecom.exception.AppException;
@@ -46,26 +45,6 @@ public class DrinkController {
     }
 
     /**
-     * Advanced Search - Tìm kiếm nâng cao theo tên, description, category, region
-     * GET /api/drinks/search?name=coffee&description=black&category=COFFEE&region=HANOI
-     * 
-     * Ví dụ:
-     *   /search?name=coffee → tìm tên chứa "coffee"
-     *   /search?description=black → tìm description chứa "black"
-     *   /search?category=COFFEE → tìm category COFFEE
-     *   /search?region=HANOI → tìm sản phẩm ở Hà Nội
-     *   /search?name=coffee&region=HANOI → kết hợp tên + khu vực
-     */
-    @GetMapping("/search")
-    public ResponseEntity<List<DrinkResponseDto>> advancedSearch(
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) Category category,
-            @RequestParam(required = false) Region region) {
-        return ResponseEntity.ok(drinkService.advancedSearch(name, description, category, region));
-    }
-
-    /**
      * Filter - Lọc sản phẩm theo nhiều tiêu chí (tất cả optional)
      * GET /api/drinks/filter?categories=COFFEE&featured=true&unit=CUP&minPrice=20000&maxPrice=100000&region=HA_NOI
      * 
@@ -79,7 +58,7 @@ public class DrinkController {
      */
     @GetMapping("/filter")
     public ResponseEntity<List<DrinkResponseDto>> filterDrinks(
-            @RequestParam(required = false) List<Category> categories,
+            @RequestParam(required = false) List<DrinkCategory> categories,
             @RequestParam(required = false) Boolean featured,   // nó nó theo tiêu chí lọc có thể người dùng chỉ chọn là categories = TEA và region = HA_NOI thì cái này trống
             @RequestParam(required = false) Unit unit,
             @RequestParam(required = false) Long minPrice,

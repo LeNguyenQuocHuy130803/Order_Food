@@ -1,4 +1,4 @@
-package com.example.backend_Ecom.config;
+package com.example.backend_Ecom.security;
 
 import com.example.backend_Ecom.exception.CustomAccessDeniedHandler;
 import com.example.backend_Ecom.exception.CustomAuthenticationEntryPoint;
@@ -38,8 +38,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+//                        .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").authenticated()
+                        // ✅ KHÔNG CẦN TOKEN (để test)
+ .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").permitAll()
                         .anyRequest().permitAll())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

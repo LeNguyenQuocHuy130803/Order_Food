@@ -1,7 +1,6 @@
 package com.example.backend_Ecom.entity;
 
-import com.example.backend_Ecom.enums.Category;
-import com.example.backend_Ecom.enums.DrinkType;
+import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
 import java.time.LocalDateTime;
@@ -41,7 +40,7 @@ public class Drink {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Category category ;
+    private DrinkCategory category ;
 
     @Column(nullable = false)
     @Builder.Default

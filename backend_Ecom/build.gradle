@@ -56,6 +56,9 @@ dependencies {
 	implementation 'com.cloudinary:cloudinary-http45:1.36.0'
 	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+	// Email sending
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 }
 
 tasks.named('test') {

@@ -17,6 +17,7 @@ public enum ErrorCode {
     ACCOUNT_LOCKED(401, "ACCOUNT_LOCKED", "Account is locked due to multiple failed login attempts. Please try again later."),
     TOKEN_EXPIRED(401, "TOKEN_EXPIRED", "Token has expired"),
     INVALID_TOKEN(401, "INVALID_TOKEN", "Invalid or malformed token"),
+    EMAIL_NOT_VERIFIED(401, "EMAIL_NOT_VERIFIED", "Email address is not verified"),
     
     // Validation (400)
     BAD_REQUEST(400, "BAD_REQUEST", "Invalid request"),
@@ -24,6 +25,7 @@ public enum ErrorCode {
     INVALID_REQUEST(400, "INVALID_REQUEST", "Invalid request"),
     EMAIL_ALREADY_EXISTS(400, "EMAIL_ALREADY_EXISTS", "Email already exists"),
     PHONE_ALREADY_EXISTS(400, "PHONE_ALREADY_EXISTS", "Phone number already exists"),
+    APP_EXCEPTION(400, "APP_EXCEPTION", "Application error"),
     
     // Not Found (404)
     USER_NOT_FOUND(404, "USER_NOT_FOUND", "User not found"),

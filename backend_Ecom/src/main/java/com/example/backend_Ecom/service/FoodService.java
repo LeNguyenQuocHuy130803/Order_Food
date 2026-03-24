@@ -140,14 +140,6 @@ public class FoodService {
                 .build();
     }
 
-    public List<FoodResponseDto> advancedSearch(String name, String description, FoodCategory category, Region region) {
-        log.info("Advanced search - name: {}, description: {}, category: {}, region: {}", name, description, category, region);
-        return foodRepository.findAll(FoodSpecification.advancedSearchCriteria(name, description, category, region))
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
-    }
-
     public List<FoodResponseDto> filterFoods(List<FoodCategory> categories, Boolean featured, 
                                              Unit unit, Long minPrice, Long maxPrice, Region region) {
         log.info("Filtering foods - categories: {}, featured: {}, unit: {}, price: {} - {}, region: {}", 

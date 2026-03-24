@@ -1,6 +1,6 @@
 package com.example.backend_Ecom.enums;
 
-public enum Category {
+public enum DrinkCategory {
     COFFEE("Coffee", "Cà phê"),
     MILK_TEA("Milk Tea", "Trà sữa"),
     JUICE("Juice", "Nước ép"),
@@ -9,7 +9,7 @@ public enum Category {
     private final String englishName;
     private final String vietnameseName;
 
-    Category(String englishName, String vietnameseName) {
+    DrinkCategory(String englishName, String vietnameseName) {
         this.englishName = englishName;
         this.vietnameseName = vietnameseName;
     }

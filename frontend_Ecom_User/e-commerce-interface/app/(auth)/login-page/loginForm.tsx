@@ -6,7 +6,7 @@ import { SchemaLogin, type LoginFormData } from './login.schema'
 import { FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { signIn } from 'next-auth/react'
+import { authService } from '@/service/authService'
 
 export default function LoginForm() {
   const router = useRouter()
@@ -28,20 +28,24 @@ export default function LoginForm() {
       setLoading(true)
       setError(null)
 
-      const res = await signIn('credentials', {
+      // ✅ Gọi authService để login
+      // authService sẽ gọi /api/auth/login (route.ts)
+      // route.ts sẽ forward tới backend Spring Boot
+      // route.ts sẽ set HTTP-Only cookies
+      const user = await authService.loginUser({
         email: values.email,
         password: values.password,
-        redirect: false,
       })
 
-      if (res?.error) {
-        setError(res.error)
-      } else {
-        setSuccess(true)
-        setTimeout(() => {
-          router.push('/dashboard-employers')
-        }, 2000)
-      }
+      // ✅ Lưu user info vào localStorage (tokens ở cookies)
+      authService.saveUserData(user)
+
+      setSuccess(true)
+      
+      // ✅ Redirect tới dashboard sau 1 giây
+      setTimeout(() => {
+        router.push('/')
+      }, 1000)
     } catch (err: any) {
       setError(err.message || 'Login failed, please try again.')
     } finally {
