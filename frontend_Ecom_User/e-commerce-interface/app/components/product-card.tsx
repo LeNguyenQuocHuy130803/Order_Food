@@ -59,13 +59,14 @@ export default function ProductCard({ product, type }: ProductCardProps) {
         </div>
 
         <div className="p-4">
-          <h3 className="font-bold text-base line-clamp-2 mb-2">{name}</h3>
-          
-          {price && (
-            <p className="text-[#ff5528] font-bold text-lg mb-3">
-              {typeof price === 'number' ? `${price.toLocaleString('vi-VN')}₫` : price}
-            </p>
-          )}
+          <div className="flex justify-between items-start gap-2 mb-3">
+            <h3 className="font-bold text-base line-clamp-2">{name}</h3>
+            {price && (
+              <p className="text-[#ff5528] font-bold text-lg whitespace-nowrap">
+                {typeof price === 'number' ? `${price.toLocaleString('vi-VN')}₫` : price}
+              </p>
+            )}
+          </div>
 
           <button
             onClick={(e) => {

@@ -28,6 +28,7 @@ export const getAllFoodsPaginated = async (
         },
       }
     );
+    console.log("getAllFoodsPaginated response:", res.data);
     return res.data;
   } catch (error) {
     console.error("Error in getAllFoodsPaginated:", error);
@@ -43,11 +44,14 @@ export const getAllFoodsPaginated = async (
 export const getFoodById = async (id: number): Promise<Food> => {
   try {
     const res = await axios.get<Food>(`${API_URL}/foods/${id}`);
+    console.log("getFoodById response nef huy:", res.data);
     return res.data;
+    
   } catch (error) {
     console.error("Error in getFoodById:", error);
     throw error;
   }
+
 };
 
 /**
@@ -73,6 +77,7 @@ export const searchFoods = async (
         ...(region && { region }),
       },
     });
+    console.log("searchFoods response:", res.data);
     return res.data;
   } catch (error) {
     console.error("Error in searchFoods:", error);
@@ -115,6 +120,7 @@ export const filterFoods = async (
     const res = await axios.get<Food[]>(`${API_URL}/foods/filter`, {
       params,
     });
+    console.log("filterFoods response:", res.data);
     return res.data;
   } catch (error) {
     console.error("Error in filterFoods:", error);
