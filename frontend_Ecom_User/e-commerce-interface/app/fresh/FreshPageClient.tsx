@@ -10,7 +10,8 @@ import { ProductHeader } from "@/app/components/layout/product-header";
 import { HeroBanner } from "@/app/components/hero-banner";
 import { ResultsDisplay } from "@/app/components/results-display";
 
-import { useFresh } from "@/hooks/useFresh";
+// ✨ Updated: Use React Query hook instead of manual state
+import { useFreshQuery } from "@/hooks/useFreshQuery";
 
 import type { FilterParams } from "@/types/drink";
 
@@ -70,7 +71,8 @@ export default function FreshPageClient() {
 
   const pageSize = DEFAULT_PAGE_SIZE;
 
-  const { fresh, loading, error, totalPages } = useFresh(
+  // ✨ React Query tự handle caching & deduplication
+  const { fresh, loading, error, totalPages } = useFreshQuery(
     filters,
     currentPage,
     pageSize
@@ -89,7 +91,7 @@ export default function FreshPageClient() {
   useEffect(() => {
     if (Object.keys(filters).length > 0 && filterRef.current) {
       setTimeout(() => {
-        smoothScrollTo(filterRef.current!, 1500); // 1.5 seconds slow scroll
+        smoothScrollTo(filterRef.current!, 1500);
       }, 100);
     }
   }, [filters]);
@@ -118,20 +120,18 @@ export default function FreshPageClient() {
         />
 
         <div className="max-w-7xl mx-auto px-4 py-12">
-
-        <ResultsDisplay
-          loading={loading}
-          error={error}
-          results={fresh}
-          productType="fresh"
-          resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
-          showPagination={Object.keys(filters).length === 0}
-          onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-          onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-
+          <ResultsDisplay
+            loading={loading}
+            error={error}
+            results={fresh}
+            productType="fresh"
+            resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
+            showPagination={Object.keys(filters).length === 0}
+            onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
         </div>
       </div>
 

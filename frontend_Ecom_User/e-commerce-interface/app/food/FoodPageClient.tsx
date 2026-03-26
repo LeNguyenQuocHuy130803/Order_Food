@@ -10,7 +10,8 @@ import { ProductHeader } from "@/app/components/layout/product-header";
 import { HeroBanner } from "@/app/components/hero-banner";
 import { ResultsDisplay } from "@/app/components/results-display";
 
-import { useFoods } from "@/hooks/useFoods";
+// ✨ New: Use React Query hook instead of manual state management
+import { useFoodsQuery } from "@/hooks/useFoodsQuery";
 
 import type { FilterParams } from "@/types/drink";
 
@@ -72,7 +73,8 @@ export default function FoodPageClient() {
 
   const pageSize = DEFAULT_PAGE_SIZE;
 
-  const { foods, loading, error, totalPages } = useFoods(
+  // ✨ React Query tự handle caching & deduplication
+  const { foods, loading, error, totalPages } = useFoodsQuery(
     filters,
     currentPage,
     pageSize
@@ -91,7 +93,7 @@ export default function FoodPageClient() {
   useEffect(() => {
     if (Object.keys(filters).length > 0 && filterRef.current) {
       setTimeout(() => {
-        smoothScrollTo(filterRef.current!, 1500); // 1.5 seconds slow scroll
+        smoothScrollTo(filterRef.current!, 1500);
       }, 100);
     }
   }, [filters]);
@@ -120,20 +122,18 @@ export default function FoodPageClient() {
         />
 
         <div className="max-w-7xl mx-auto px-4 py-12">
-
-        <ResultsDisplay
-          loading={loading}
-          error={error}
-          results={foods}
-          productType="food"
-          resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${foods.length} sản phẩm` : undefined}
-          showPagination={Object.keys(filters).length === 0}
-          onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-          onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-          currentPage={currentPage}
-          totalPages={totalPages}
-        />
-
+          <ResultsDisplay
+            loading={loading}
+            error={error}
+            results={foods}
+            productType="food"
+            resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${foods.length} sản phẩm` : undefined}
+            showPagination={Object.keys(filters).length === 0}
+            onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            currentPage={currentPage}
+            totalPages={totalPages}
+          />
         </div>
       </div>
 

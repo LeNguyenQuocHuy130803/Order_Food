@@ -17,7 +17,7 @@ interface ProductCardProps {
   product: Product
   type: 'drink' | 'food' | 'fresh'
 }
-
+// file này dùng để hiển thị giao diện card sản phẩm chung cho cả 3 loại: drink, food, fresh
 export default function ProductCard({ product, type }: ProductCardProps) {
   const [isFavorited, setIsFavorited] = useState(false)
 
