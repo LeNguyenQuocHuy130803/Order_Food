@@ -8,7 +8,9 @@ public enum FoodCategory {
     SOUP("Soup", "Súp"),
     SALAD("Salad", "Salad"),
     PIZZA("Pizza", "Pizza"),
-    BURGER("Burger", "Burger");
+    BURGER("Burger", "Burger"),
+    PHO ("Pho","Phở");
+
 
     private final String englishName;
     private final String vietnameseName;

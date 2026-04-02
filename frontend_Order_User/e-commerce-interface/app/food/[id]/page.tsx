@@ -5,45 +5,45 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Heart, ArrowLeft, ShoppingCart } from "lucide-react";
 
-import type { Drink } from "@/types/drink";
-import { DrinkService } from "@/service/DrinkService";
+import type { Food } from "@/types/food";
+import { FoodService } from "@/service/FoodService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
 
 
-export default function DrinkDetailPage() {
+export default function FoodDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const drinkId = params.id as string;
+  const foodId = params.id as string;
 
-  const [drink, setDrink] = useState<Drink | null>(null);
+  const [food, setFood] = useState<Food | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
-    const fetchDrinkDetail = async () => {
+    const fetchFoodDetail = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const data = await DrinkService.getDrinkById(Number(drinkId));
-        setDrink(data);
+        const data = await FoodService.getFoodById(Number(foodId));
+        setFood(data);
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu";
         setError(errorMessage);
-        console.error("Error fetching drink detail:", err);
+        console.error("Error fetching food detail:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (drinkId) {
-      fetchDrinkDetail();
+    if (foodId) {
+      fetchFoodDetail();
     }
-  }, [drinkId]);
+  }, [foodId]);
 
   if (isLoading) {
     return (
@@ -78,7 +78,7 @@ export default function DrinkDetailPage() {
     );
   }
 
-  if (error || !drink) {
+  if (error || !food) {
     return (
       <main className="bg-background min-h-screen">
         <ProductHeader />
@@ -99,7 +99,7 @@ export default function DrinkDetailPage() {
     );
   }
 
-  const totalPrice = drink.price * quantity;
+  const totalPrice = food.price * quantity;
 
   return (
     <main className="bg-background min-h-screen">
@@ -122,17 +122,17 @@ export default function DrinkDetailPage() {
             {/* Main Image */}
             <div className="relative w-full h-96 rounded-3xl overflow-hidden bg-gray-100 group">
               <Image
-                src={drink.imageUrl}
-                alt={drink.name}
+                src={food.imageUrl}
+                alt={food.name}
                 fill
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 priority
               />
 
               {/* Featured Badge */}
-              {drink.featured === true && (
+              {food.featured === true && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm">
-                  Nổi bật
+                  Bán chạy
                 </div>
               )}
 
@@ -158,10 +158,10 @@ export default function DrinkDetailPage() {
             {/* Product Name */}
             <div>
               <p className="text-sm font-semibold text-gray-500 mb-2 uppercase">
-                {drink.category}
+                {food.category}
               </p>
               <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
-                {drink.name}
+                {food.name}
               </h1>
             </div>
 
@@ -169,7 +169,7 @@ export default function DrinkDetailPage() {
             <div className="flex gap-8 items-start py-4 border-b border-gray-200">
               <h2 className="text-lg font-bold text-foreground min-w-max">Mô tả</h2>
               <p className="text-gray-600 leading-relaxed text-base">
-                {drink.description}
+                {food.description}
               </p>
             </div>
 
@@ -177,14 +177,14 @@ export default function DrinkDetailPage() {
             <div className="flex items-center gap-4 py-4 bg-gray-50  rounded-lg">
               <span className="font-semibold text-gray-700">Kho hàng:</span>
               <span className="text-xl font-bold text-primary">
-                {drink.quantity} cái
+                {food.quantity} cái
               </span>
               <span className={`ml-auto px-3 py-1 rounded-full text-sm font-semibold ${
-                drink.quantity > 0
+                food.quantity > 0
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
               }`}>
-                {drink.quantity > 0 ? "Có sẵn" : "Hết hàng"}
+                {food.quantity > 0 ? "Có sẵn" : "Hết hàng"}
               </span>
             </div>
 
@@ -193,10 +193,10 @@ export default function DrinkDetailPage() {
               <p className="text-gray-600 text-sm mb-2">Giá</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-5xl font-black text-red-500">
-                  ${(drink.price / 1000).toFixed(1)}
+                  ${(food.price / 1000).toFixed(1)}
                 </span>
                 <span className="text-xl font-bold text-red-500">
-                  /{drink.unit}
+                  /{food.unit}
                 </span>
               </div>
             </div>
@@ -216,10 +216,10 @@ export default function DrinkDetailPage() {
                 </span>
                 <button
                   onClick={() =>
-                    setQuantity(Math.min(drink.quantity, quantity + 1))
+                    setQuantity(Math.min(food.quantity, quantity + 1))
                   }
                   className="px-4 py-2 text-lg font-bold hover:bg-gray-100 transition-colors"
-                  disabled={quantity >= drink.quantity}
+                  disabled={quantity >= food.quantity}
                 >
                   +
                 </button>
@@ -236,9 +236,9 @@ export default function DrinkDetailPage() {
 
             {/* Order Button */}
             <button
-              disabled={drink.quantity === 0}
+              disabled={food.quantity === 0}
               className={`w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 ${
-                drink.quantity === 0
+                food.quantity === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl active:scale-95"
               }`}

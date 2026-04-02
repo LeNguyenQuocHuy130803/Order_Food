@@ -39,7 +39,7 @@ export default function ProductCard({ product, type }: ProductCardProps) {
 
           {featured && (
             <div className="absolute top-3 left-3 bg-red-500 text-white px-2.5 py-1.5 rounded-full text-xs font-bold">
-              Nổi bật
+              Bán chạy
             </div>
           )}
 

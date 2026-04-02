@@ -132,7 +132,7 @@ export default function FreshDetailPage() {
               {/* Featured Badge */}
               {fresh.featured === true && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm">
-                  Nổi bật
+                  Bán chạy
                 </div>
               )}
 
