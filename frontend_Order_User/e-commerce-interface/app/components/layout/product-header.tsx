@@ -5,16 +5,6 @@ import { useState } from "react"
 import { ShoppingCart, Menu, X, Search, User } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
 
-const navigation = [
-  { name: "Trang chu", href: "/" },
-  { name: "Mon an", href: "/food" },
-  { name: "Thuc pham tuoi", href: "/fresh" },
-  { name: "Do uong", href: "/drink" },
-  { name: "Blog", href: "/blog" },
-  { name: "Lien he", href: "/contact" },
-  { name: "Ve chung toi", href: "/about" },
-]
-
 export function ProductHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -22,25 +12,41 @@ export function ProductHeader() {
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff5528]">
-            <span className="text-xl font-bold text-white">F</span>
-          </div>
-          <span className="text-xl font-bold text-foreground">FoodieHub</span>
-        </Link>
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative">
+                <div className="w-12 h-12 bg-[#ff5528] rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">F</span>
+                </div>
+              </div>
+              <span className="text-2xl font-bold text-[#0d0d0d]">
+                FOOD<span className="text-[#ff5528]">KING</span>
+              </span>
+            </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex lg:gap-x-8">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-[#ff5528]"
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
+        <nav className="hidden lg:flex items-center gap-8">
+          <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Home
+          </Link>
+          <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Food
+          </Link>
+          <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Fresh
+          </Link>
+          <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Drinks
+          </Link>
+          <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Blog
+          </Link>
+          <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Contact
+          </Link>
+          <Link href="/about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            About
+          </Link>
+        </nav>
 
         {/* Actions */}
         <div className="flex items-center gap-4">
@@ -73,16 +79,55 @@ export function ProductHeader() {
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-border">
           <div className="space-y-1 px-4 py-4">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="block rounded-lg px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-[#ff5528]"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            <Link
+              href="/"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/food"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Food
+            </Link>
+            <Link
+              href="/fresh"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Fresh
+            </Link>
+            <Link
+              href="/drink"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Drinks
+            </Link>
+            <Link
+              href="/blog"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
+            </Link>
+            <Link
+              href="/contact"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Contact
+            </Link>
+            <Link
+              href="/about"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              About
+            </Link>
           </div>
         </div>
       )}

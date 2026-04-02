@@ -103,9 +103,9 @@ export default function DrinkPageClient() {
       {/* Hero Banner */}
       <HeroBanner
         icon={Coffee}
-        badge="Giao lanh 30 phut"
-        headline="Do uong tuoi mat moi ngay"
-        description="Tu ca phe truyen thong den tra sua hien dai, nuoc ep tuoi va sinh to. Tat ca duoc pha che tuoi va giao nhanh den ban."
+        badge="30-minute delivery"
+        headline="Fresh Drinks Every Day"
+        description="From traditional coffee to modern milk tea, fresh juice and smoothies. All freshly made and delivered quickly to you."
         imageSrc="/image/drink1.jpg"
         imageAlt="Delicious drinks"
       />
@@ -124,7 +124,7 @@ export default function DrinkPageClient() {
             error={error}
             results={drinks}
             productType="drink"
-            resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${drinks.length} sản phẩm` : undefined}
+            resultCount={Object.keys(filters).length === 0 ? `Showing ${drinks.length} products` : undefined}
             showPagination={Object.keys(filters).length === 0}
             onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}

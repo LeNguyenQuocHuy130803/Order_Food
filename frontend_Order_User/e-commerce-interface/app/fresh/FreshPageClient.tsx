@@ -104,9 +104,9 @@ export default function FreshPageClient() {
       {/* Hero Banner */}
       <HeroBanner
         icon={Leaf}
-        badge="Giao lanh 30 phut"
-        headline="San pham tuoi sach moi ngay"
-        description="Nhung san pham tuoi sach, dinh duong cao duoc chon loc ky luong. Bat qua thuc pham tuoi tot nhat."
+        badge="30-minute delivery"
+        headline="Fresh Pure Products Every Day"
+        description="Fresh and clean products with high nutrition carefully selected. Experience the best fresh products."
         imageSrc="/image/fresh/bo-rau-cai.jpg"
         imageAlt="Fresh produce"
       />
@@ -125,7 +125,7 @@ export default function FreshPageClient() {
             error={error}
             results={fresh}
             productType="fresh"
-            resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${fresh.length} sản phẩm` : undefined}
+            resultCount={Object.keys(filters).length === 0 ? `Showing ${fresh.length} products` : undefined}
             showPagination={Object.keys(filters).length === 0}
             onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}

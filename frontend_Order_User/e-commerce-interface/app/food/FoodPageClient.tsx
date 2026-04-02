@@ -106,9 +106,9 @@ export default function FoodPageClient() {
       {/* Hero Banner */}
       <HeroBanner
         icon={UtensilsCrossed}
-        badge="Giao lanh 30 phut"
-        headline="Mon an ngon moi ngay"
-        description="Tan huong nhung mon an ngon tuyet voi chat luong hang dau. Tuat ca duoc chon loc ky luong."
+        badge="30-minute delivery"
+        headline="Delicious Food Every Day"
+        description="Enjoy delicious meals with top quality. All items are carefully selected."
         imageSrc="/image/food/pho-bo-ha-noi.jpg"
         imageAlt="Delicious food"
       />
@@ -127,7 +127,7 @@ export default function FoodPageClient() {
             error={error}
             results={foods}
             productType="food"
-            resultCount={Object.keys(filters).length === 0 ? `Hiển thị ${foods.length} sản phẩm` : undefined}
+            resultCount={Object.keys(filters).length === 0 ? `Showing ${foods.length} products` : undefined}
             showPagination={Object.keys(filters).length === 0}
             onPreviousPage={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             onNextPage={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}

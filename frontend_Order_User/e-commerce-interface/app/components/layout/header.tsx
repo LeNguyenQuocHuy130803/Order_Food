@@ -141,7 +141,7 @@ export function Header() {
               ) : (
                 <Link href="/login-page" className="hidden md:flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-[#f5f5f5] hover:bg-[#ff5528] hover:text-white transition-colors">
                   <User className="w-5 h-5" />
-                  <span className="text-sm font-semibold">Đăng nhập</span>
+                  <span className="text-sm font-semibold">Login</span>
                 </Link>
               )}
 

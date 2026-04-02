@@ -58,7 +58,7 @@ export default function SearchPageClient() {
             )}
             {description && (
               <span className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-                📝 Mô tả: <strong>{description}</strong>
+                � Description: <strong>{description}</strong>
               </span>
             )}
             {category && (
@@ -77,7 +77,7 @@ export default function SearchPageClient() {
               onClick={() => router.back()}
               className="ml-auto px-6 py-2 border-2 border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition-colors font-medium"
             >
-              ← Quay lại
+              ← Back
             </button>
           </div>
         </div>

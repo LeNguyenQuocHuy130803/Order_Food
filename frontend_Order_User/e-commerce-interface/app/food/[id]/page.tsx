@@ -32,7 +32,7 @@ export default function FoodDetailPage() {
         setFood(data);
       } catch (err) {
         const errorMessage =
-          err instanceof Error ? err.message : "Có lỗi xảy ra khi tải dữ liệu";
+          err instanceof Error ? err.message : "Error loading data";
         setError(errorMessage);
         console.error("Error fetching food detail:", err);
       } finally {
@@ -85,13 +85,13 @@ export default function FoodDetailPage() {
         <div className="max-w-7xl mx-auto px-4 py-12 pt-22">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <p className="text-red-700 font-semibold text-lg mb-4">
-              ❌ {error || "Sản phẩm không tồn tại"}
+              ❌ {error || "Product not found"}
             </p>
             <button
               onClick={() => router.back()}
               className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
             >
-              Quay lại
+              Back
             </button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function FoodDetailPage() {
           className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors mb-8"
         >
           <ArrowLeft size={20} />
-          <span className="font-semibold">Quay lại</span>
+          <span className="font-semibold">Back</span>
         </button>
 
         {/* Main Content */}
@@ -132,7 +132,7 @@ export default function FoodDetailPage() {
               {/* Featured Badge */}
               {food.featured === true && (
                 <div className="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full font-bold text-sm">
-                  Bán chạy
+                  Best Seller
                 </div>
               )}
 
@@ -167,7 +167,7 @@ export default function FoodDetailPage() {
 
             {/* Description */}
             <div className="flex gap-8 items-start py-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-foreground min-w-max">Mô tả</h2>
+              <h2 className="text-lg font-bold text-foreground min-w-max">Description</h2>
               <p className="text-gray-600 leading-relaxed text-base">
                 {food.description}
               </p>
@@ -175,7 +175,7 @@ export default function FoodDetailPage() {
 
             {/* Stock Info */}
             <div className="flex items-center gap-4 py-4 bg-gray-50  rounded-lg">
-              <span className="font-semibold text-gray-700">Kho hàng:</span>
+              <span className="font-semibold text-gray-700">Stock:</span>
               <span className="text-xl font-bold text-primary">
                 {food.quantity} cái
               </span>
@@ -184,13 +184,13 @@ export default function FoodDetailPage() {
                   ? "bg-green-100 text-green-700"
                   : "bg-red-100 text-red-700"
               }`}>
-                {food.quantity > 0 ? "Có sẵn" : "Hết hàng"}
+                {food.quantity > 0 ? "In Stock" : "Out of Stock"}
               </span>
             </div>
 
             {/* Price Section */}
             <div className="py-6 border-t border-b border-gray-200">
-              <p className="text-gray-600 text-sm mb-2">Giá</p>
+              <p className="text-gray-600 text-sm mb-2">Price</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-5xl font-black text-red-500">
                   ${(food.price / 1000).toFixed(1)}
@@ -203,7 +203,7 @@ export default function FoodDetailPage() {
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-4">
-              <span className="font-semibold text-gray-700">Số lượng:</span>
+              <span className="font-semibold text-gray-700">Quantity:</span>
               <div className="flex items-center border border-gray-300 rounded-lg">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
@@ -228,7 +228,7 @@ export default function FoodDetailPage() {
 
             {/* Total Price */}
             <div className="bg-primary/10 px-6 py-4 rounded-lg">
-              <p className="text-gray-600 text-sm mb-1">Tổng tiền</p>
+              <p className="text-gray-600 text-sm mb-1">Total</p>
               <p className="text-3xl font-black text-primary">
                 ${(totalPrice / 1000).toFixed(1)}
               </p>
@@ -244,7 +244,7 @@ export default function FoodDetailPage() {
               }`}
             >
               <ShoppingCart size={24} />
-              <span>Đặt hàng ngay ({quantity} cái)</span>
+              <span>Order Now ({quantity} items)</span>
             </button>
           </div>
         </div>

@@ -52,7 +52,7 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
           <div className="relative">
             <input
               type="text"
-              placeholder="Tìm quán ăn, món ăn..."
+              placeholder="Search restaurants, dishes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -64,7 +64,7 @@ export function SearchFilter({ showSearch, setShowSearch }: SearchFilterProps) {
             <button
               onClick={handleSearch}
               className="absolute top-1/2 right-14 transform -translate-y-1/2 p-2 hover:bg-[#ff5528] hover:text-white text-gray-600 rounded-full transition-all hover:scale-110"
-              title="Tìm kiếm (Enter)"
+              title="Search (Enter)"
             >
               <Search className="w-6 h-6" />
             </button>
