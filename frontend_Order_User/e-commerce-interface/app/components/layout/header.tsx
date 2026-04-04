@@ -28,6 +28,13 @@ export function Header() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // Log user roles when user is loaded
+  useEffect(() => {
+    if (user && !loading) {
+      console.log(`   - Roles: ${user.roles}`)
+    }
+  }, [user, loading])
+
   return (
     <header className="w-full relative">
       <SearchFilter showSearch={showSearch} setShowSearch={setShowSearch} />
@@ -105,7 +112,7 @@ export function Header() {
                   >
                     <Image
                       src={user.avatar || '/image/avatarNull/avatarNull.jpg'}
-                      alt={user.username}
+                      alt={user.userName || 'User Avatar'}
                       fill
                       className="object-cover"
                       priority
@@ -116,16 +123,27 @@ export function Header() {
                   {showUserMenu && (
                     <div className="absolute right-0 top-12 w-52 bg-white shadow-2xl rounded-lg z-50 border border-gray-100">
                       <div className="px-4 py-3 border-b border-gray-200">
-                        <p className="font-semibold text-[#0d0d0d] truncate">{user.username}</p>
+                        <p className="font-semibold text-[#0d0d0d] truncate">{user.userName}</p>
                         <p className="text-xs text-gray-600 truncate">{user.email}</p>
                       </div>
-                      <Link
-                        href="/dashboard-employers"
-                        className="block px-4 py-3 hover:bg-[#f5f5f5] hover:text-[#ff5528] transition-colors text-sm"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Dashboard
-                      </Link>
+                      {user.roles.includes('Customers') && (
+                        <>
+                          <Link
+                            href="/account"
+                            className="block px-4 py-3 hover:bg-[#f5f5f5] hover:text-[#ff5528] transition-colors text-sm"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            Management Account
+                          </Link>
+                          <Link
+                            href="/dashboard-employers"
+                            className="block px-4 py-3 hover:bg-[#f5f5f5] hover:text-[#ff5528] transition-colors text-sm"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            Dashboard
+                          </Link>
+                        </>
+                      )}
                       <button
                         onClick={async () => {
                           setShowUserMenu(false)

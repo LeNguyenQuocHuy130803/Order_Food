@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { authService, type AuthUser } from '@/service/authService'
+import { authService } from '@/service/authService'
+import type { AuthUser } from '@/types/user'
 
 export interface Auth {
   user: AuthUser | null
@@ -26,7 +27,7 @@ export function useAuth(): Auth {
     if (!currentUser) {
       console.log('ℹ️ [useAuth] User not authenticated')
     } else {
-      console.log('✅ [useAuth] User authenticated:', currentUser.username)
+      console.log('✅ [useAuth] User authenticated:', currentUser.userName)
     }
   }, [])   // Chỉ chạy 1 lần khi component mount ( tức là componen nào dùng nó thì nó sẽ chạy 1 lần khi component đó mount)
 

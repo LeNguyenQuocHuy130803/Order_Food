@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     // AccessToken: Set 1 hour
     res.cookies.set('accessToken', data.accessToken, {
       httpOnly: true,        // 🔒 QUAN TRỌNG: JS không thể truy cập (XSS safe)
-      secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
+      secure: false,         // 🔧 DEV: localhost HTTP không HTTPS, nên false
       sameSite: 'lax',       // 🔒 CSRF protection
       maxAge: 3600,          // 1 hour
       path: '/',
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     if (data.refreshToken) {
       res.cookies.set('refreshToken', data.refreshToken, {
         httpOnly: true,      // 🔒 JS không thể truy cập
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,       // 🔧 DEV: localhost HTTP không HTTPS, nên false
         sameSite: 'lax',
         maxAge: 7 * 24 * 3600, // 7 days
         path: '/',

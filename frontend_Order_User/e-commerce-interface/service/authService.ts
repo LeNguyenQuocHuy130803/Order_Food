@@ -2,7 +2,11 @@
  * Auth Service - Gọi backend Spring Boot JWT API
  * Tokens lưu ở HTTP-Only Cookies (server-side, bảo mật)
  * User info lưu ở localStorage (safe)
+ * 
+ * Chỉ xử lý login, logout, token management
  */
+
+import type { AuthUser } from '@/types/user'
 
 export interface LoginCredentials {
   email: string
@@ -12,18 +16,10 @@ export interface LoginCredentials {
 export interface LoginResponse {
   id: number
   email: string
-  username: string
+  userName: string
   roles: string[]
   accessToken: string
   refreshToken: string
-}
-
-export interface AuthUser {
-  id: number
-  username: string
-  email: string
-  roles: string[]
-  avatar?: string
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
@@ -66,6 +62,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthUser
       username: data.user.username,
       roles: data.user.roles,
         avatar: data.user.avatar,
+        phonenumber: data.user.phone,
     })
     
     return data.user
@@ -84,7 +81,7 @@ export function saveUserData(user: AuthUser): void {
   if (typeof window === 'undefined') return
 
   localStorage.setItem('userId', user.id.toString())
-  localStorage.setItem('username', user.username)
+  localStorage.setItem('username', user.userName)
   localStorage.setItem('email', user.email)
   localStorage.setItem('roles', JSON.stringify(user.roles))
   if (user.avatar) {
@@ -110,7 +107,7 @@ export function getCurrentUser(): AuthUser | null {
 
   return {
     id: parseInt(userId, 10),
-    username,
+    userName: username || '',
     email: email || '',
     roles: roles ? JSON.parse(roles) : [],
     avatar: avatar || undefined,
