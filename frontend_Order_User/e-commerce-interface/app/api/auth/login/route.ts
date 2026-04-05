@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
         user: {
           id: data.id,
           email: data.email,
-          username: data.username,
+          userName: data.username,  // ✅ Normalize: username → userName (match AuthUser type)
           roles: data.roles,
           avatar: data.avatar,
         },

@@ -1,28 +1,24 @@
 
-import axios from "axios"
-import type { UserDetail } from "@/types/user"
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api"
+import apiClient from '@/lib/apiClient'
+import type { UserDetail } from '@/types/user'
 
 /**
  * UserService - Lấy và quản lí user data
  * Chỉ liên quan đến việc fetch user info từ API
- * Dùng axios + async/await
+ * Dùng apiClient (axios) với auto-refresh token interceptor
  */
 
 /**
  * Get user detail by ID - gọi /api/users/{id} với token
- * Token sẽ gửi qua HTTP-Only cookies tự động (credentials: include)
+ * Token sẽ gửi qua HTTP-Only cookies tự động
+ * Nếu token hết hạn → interceptor tự động refresh
  */
 export const getUserById = async (userId: number): Promise<UserDetail> => {
   try {
     console.log(`🔍 [userService] Fetching user details for ID: ${userId}`)
     
-    const res = await axios.get<UserDetail>(
-      `/api/users/${userId}`,
-      {
-        withCredentials: true,  // 🔒 Gửi token qua cookies tự động
-      }
+    const res = await apiClient.get<UserDetail>(
+      `/users/${userId}`
     )
     
     console.log(`✅ [userService] User details fetched:`, {
@@ -40,7 +36,6 @@ export const getUserById = async (userId: number): Promise<UserDetail> => {
     throw error
   }
 }
-
 
 export const userService = {
   getUserById,

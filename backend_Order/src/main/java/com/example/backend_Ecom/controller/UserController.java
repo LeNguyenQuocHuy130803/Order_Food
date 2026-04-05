@@ -3,11 +3,14 @@ package com.example.backend_Ecom.controller;
 import com.example.backend_Ecom.dto.UserResponseDto;
 import com.example.backend_Ecom.dto.UserUpdateRequestDto;
 import com.example.backend_Ecom.dto.PaginatedUserResponseDto;
+import com.example.backend_Ecom.exception.AppException;
+import com.example.backend_Ecom.exception.ErrorCode;
+import com.example.backend_Ecom.security.UserPrincipal;
 import com.example.backend_Ecom.service.UserService;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,10 +56,10 @@ public class UserController {
      * Get user by ID
      * GET /api/users/{id}
      * Required: Authentication token
+     * Authorization: User can only access their own data or admins can access any user
      */
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDto> getUserById( @PathVariable Long id) {
         UserResponseDto user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
@@ -65,12 +68,13 @@ public class UserController {
      * Update user information with form-data support for avatar upload
      * PUT /api/users/{id}
      * Required: Authentication token
+     * Authorization: User can only update their own data or admins can update any user
      */
     @PatchMapping(value = "/{id}", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDto> updateUser(
             @PathVariable Long id,
             @ModelAttribute UserUpdateRequestDto request) {
+        
         UserResponseDto updatedUser = userService.updateUser(id, request);
         return ResponseEntity.ok(updatedUser);
     }

@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     res.cookies.set('accessToken', data.accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,  // 🔧 DEV: localhost HTTP không HTTPS, nên false
       sameSite: 'lax',
       maxAge: 3600,
       path: '/',
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     if (data.refreshToken) {
       res.cookies.set('refreshToken', data.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,  // 🔧 DEV: localhost HTTP không HTTPS, nên false
         sameSite: 'lax',
         maxAge: 7 * 24 * 3600,
         path: '/',

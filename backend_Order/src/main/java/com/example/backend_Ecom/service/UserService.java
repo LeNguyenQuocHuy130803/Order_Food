@@ -512,7 +512,6 @@ public class UserService {
      * Get user by ID
      */
     public UserResponseDto getUserById(Long id) {
-        log.info("Fetching user by ID: {}", id);
         User user = userJpaRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with ID: " + id));
         return mapToDto(user);

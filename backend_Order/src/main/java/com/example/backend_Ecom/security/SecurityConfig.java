@@ -5,6 +5,7 @@ import com.example.backend_Ecom.exception.CustomAuthenticationEntryPoint;
 import com.example.backend_Ecom.filters.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +15,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,11 +39,23 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-//                        .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").authenticated()
+                        // .requestMatchers("/api/users/**").permitAll()
+                        // .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**",
+                        // "/api/drinks/**", "/api/desserts/**").authenticated()
                         // ✅ KHÔNG CẦN TOKEN (để test)
- .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").permitAll()
+                        .requestMatchers("/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").permitAll()
+
+                        // ✅ ADMIN ONLY - Nhạy cảm (GET by ID, UPDATE, DELETE)
+                        // .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasRole("Administrators") // ← Chỉ Admin
+                       .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+                       .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
+                       .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
+                       .requestMatchers(HttpMethod.POST, "/api/foods/**").hasRole("Administrators") // ← Chỉ Admin
+                       .requestMatchers(HttpMethod.PUT, "/api/foods/**").hasRole("Administrators")
+                       .requestMatchers(HttpMethod.DELETE, "/api/foods/**").hasRole("Administrators")
+
                         .anyRequest().permitAll())
-                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

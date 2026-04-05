@@ -1,102 +1,102 @@
 /**
- * API Client Helper
- * Tự động include HTTP-only cookies khi gọi API
- * Sử dụng cho tất cả requests cần authentication
+ * API Client với Auto-Refresh Token Interceptor
+ * 
+ * Khi token hết hạn (401):
+ * 1. Bắt lỗi 401
+ * 2. Gọi /api/auth/refresh để lấy token mới
+ * 3. Gửi lại request cũ với token mới
  */
 
-interface FetchOptions extends RequestInit {
-  skipAuth?: boolean
+import axios, { AxiosError, AxiosInstance } from 'axios'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+
+// Tạo axios instance
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,  // 🔒 Gửi cookies tự động
+})
+
+// Flag để tránh gọi refresh nhiều lần cùng lúc
+let isRefreshing = false
+let failedQueue: Array<{
+  onSuccess: (token: string) => void
+  onFailed: (error: AxiosError) => void
+}> = []
+
+const processQueue = (error: AxiosError | null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.onFailed(error)
+    }
+  })
+
+  failedQueue = []
 }
 
-export async function apiFetch(
-  url: string,
-  options: FetchOptions = {}
-): Promise<Response> {
-  const { skipAuth = false, ...fetchOptions } = options
+/**
+ * Response Interceptor - Xử lý lỗi 401 (token expired)
+ */
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as any
 
-  // ✅ Tự động include credentials (cookies)
-  const finalOptions: RequestInit = {
-    ...fetchOptions,
-    credentials: 'include', // 🔒 Browser sẽ tự gửi HTTP-only cookies
-  }
-
-  // Set default headers
-  if (!finalOptions.headers) {
-    finalOptions.headers = {}
-  }
-
-  const headersObj = finalOptions.headers as Record<string, string>
-  if (!headersObj['Content-Type'] && finalOptions.method !== 'GET') {
-    headersObj['Content-Type'] = 'application/json'
-  }
-
-  try {
-    console.log(`🔗 [apiClient] ${finalOptions.method || 'GET'} ${url}`)
-    
-    const response = await fetch(url, finalOptions)
-
-    console.log(`📡 [apiClient] Status: ${response.status}`)
-
-    // ✅ Handle 401 - token expired
-    if (response.status === 401) {
-      console.warn('⚠️ [apiClient] Token expired (401)')
-      // Refresh token logic có thể thêm ở đây
-      // Hoặc redirect về login
+    // Nếu lỗi không phải 401 hoặc đã retry rồi → throw error
+    if (error.response?.status !== 401 || originalRequest._retry) {
+      return Promise.reject(error)
     }
 
-    return response
-  } catch (error: any) {
-    console.error(`❌ [apiClient] Error:`, error.message)
-    throw error
+    // Nếu đang gọi refresh rồi → thêm vào queue
+    if (isRefreshing) {
+      return new Promise((onSuccess, onFailed) => {
+        failedQueue.push({ onSuccess, onFailed })
+      }).then(() => {
+        // Gửi lại request cũ
+        return apiClient(originalRequest)
+      })
+    }
+
+    // Bắt đầu refresh token
+    isRefreshing = true
+    originalRequest._retry = true
+
+    try {
+      console.log('🔄 [apiClient] Token expired, calling refresh...')
+
+      // Gọi refresh endpoint
+      await axios.post(
+        '/api/auth/refresh',
+        {},
+        {
+          withCredentials: true,
+        }
+      )
+
+      console.log('✅ [apiClient] Token refreshed successfully')
+      isRefreshing = false
+
+      // Process queue
+      processQueue(null)
+
+      // Gửi lại request cũ
+      return apiClient(originalRequest)
+    } catch (refreshError) {
+      console.error('❌ [apiClient] Refresh failed, logging out...')
+
+      isRefreshing = false
+
+      // Refresh fail → logout
+      processQueue(refreshError as AxiosError)
+
+      // Redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login-page'
+      }
+
+      return Promise.reject(refreshError)
+    }
   }
-}
+)
 
-/**
- * GET request
- */
-export async function apiGet(url: string) {
-  const response = await apiFetch(url, { method: 'GET' })
-  if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`)
-  return response.json()
-}
-
-/**
- * POST request
- */
-export async function apiPost(url: string, data: any) {
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) throw new Error(`POST ${url} failed: ${response.status}`)
-  return response.json()
-}
-
-/**
- * PUT request
- */
-export async function apiPut(url: string, data: any) {
-  const response = await apiFetch(url, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  })
-  if (!response.ok) throw new Error(`PUT ${url} failed: ${response.status}`)
-  return response.json()
-}
-
-/**
- * DELETE request
- */
-export async function apiDelete(url: string) {
-  const response = await apiFetch(url, { method: 'DELETE' })
-  if (!response.ok) throw new Error(`DELETE ${url} failed: ${response.status}`)
-  return response.json()
-}
-
-export default {
-  fetch: apiFetch,
-  get: apiGet,
-  post: apiPost,
-  put: apiPut,
-  delete: apiDelete,
-}
+export default apiClient
