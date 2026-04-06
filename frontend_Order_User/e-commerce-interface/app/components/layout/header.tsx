@@ -7,6 +7,7 @@ import { Menu, X, ShoppingCart, Search, Phone, Mail, MapPin, Clock, ChevronDown,
 import { Button } from "../ui/button"
 import { SearchFilter } from "../search_filter"
 import { useAuth } from "@/hooks/useAuth"
+import { useUserDetail } from "@/lib/api/queries"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -15,6 +16,10 @@ export function Header() {
   const [scrollOpacity, setScrollOpacity] = useState(1)
   const { user, loading, isAuthenticated, logout } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [avatarRefresh, setAvatarRefresh] = useState(0)
+
+  // ✅ Fetch updated user profile from React Query
+  const { data: profile } = useUserDetail(user?.id ?? 0)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,6 +39,25 @@ export function Header() {
       console.log(`   - Roles: ${user.roles}`)
     }
   }, [user, loading])
+
+  // ✅ Listen to page reload/avatar update
+  useEffect(() => {
+    // Check if avatar changed by comparing URLs
+    const checkAvatarUpdate = () => {
+      setAvatarRefresh(prev => prev + 1)
+    }
+
+    // Trigger on visibility change (when user comes back from account page)
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        checkAvatarUpdate()
+      }
+    })
+
+    return () => {
+      window.removeEventListener('visibilitychange', checkAvatarUpdate)
+    }
+  }, [])
 
   return (
     <header className="w-full relative">
@@ -111,8 +135,9 @@ export function Header() {
                     className="relative w-10 h-10 rounded-full border-2 border-[#ff5528] overflow-hidden hover:border-[#e64a22] transition-colors flex items-center justify-center bg-gray-200"
                   >
                     <Image
-                      src={user.avatar || '/image/avatarNull/avatarNull.jpg'}
-                      alt={user.userName || 'User Avatar'}
+                      key={`header-avatar-${avatarRefresh}`}
+                      src={`${profile?.avatar || user.avatar || '/image/avatarNull/avatarNull.jpg'}?v=${avatarRefresh}`}
+                      alt={profile?.userName || user.userName || 'User Avatar'}
                       fill
                       className="object-cover"
                       priority
@@ -123,8 +148,8 @@ export function Header() {
                   {showUserMenu && (
                     <div className="absolute right-0 top-12 w-52 bg-white shadow-2xl rounded-lg z-50 border border-gray-100">
                       <div className="px-4 py-3 border-b border-gray-200">
-                        <p className="font-semibold text-[#0d0d0d] truncate">{user.userName}</p>
-                        <p className="text-xs text-gray-600 truncate">{user.email}</p>
+                        <p className="font-semibold text-[#0d0d0d] truncate">{profile?.userName || user.userName}</p>
+                        <p className="text-xs text-gray-600 truncate">{profile?.email || user.email}</p>
                       </div>
                       {user.roles.includes('Customers') && (
                         <>

@@ -39,7 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // .requestMatchers("/api/users/**").permitAll()
+                         .requestMatchers("/api/users/**").permitAll()
                         // .requestMatchers("/api/users/**", "/api/addresses/**", "/api/foods/**",
                         // "/api/drinks/**", "/api/desserts/**").authenticated()
                         // ✅ KHÔNG CẦN TOKEN (để test)
@@ -47,12 +47,12 @@ public class SecurityConfig {
 
                         // ✅ ADMIN ONLY - Nhạy cảm (GET by ID, UPDATE, DELETE)
                         // .requestMatchers(HttpMethod.GET, "/api/users/{id}").hasRole("Administrators") // ← Chỉ Admin
-                       .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
-                       .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
-                       .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
-                       .requestMatchers(HttpMethod.POST, "/api/foods/**").hasRole("Administrators") // ← Chỉ Admin
-                       .requestMatchers(HttpMethod.PUT, "/api/foods/**").hasRole("Administrators")
-                       .requestMatchers(HttpMethod.DELETE, "/api/foods/**").hasRole("Administrators")
+//                       .requestMatchers(HttpMethod.GET, "/api/users/**").permitAll()
+//                       .requestMatchers(HttpMethod.PATCH, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
+//                       .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("Administrators") // ← Chỉ Admin
+//                       .requestMatchers(HttpMethod.POST, "/api/foods/**").hasRole("Administrators") // ← Chỉ Admin
+//                       .requestMatchers(HttpMethod.PUT, "/api/foods/**").hasRole("Administrators")
+//                       .requestMatchers(HttpMethod.DELETE, "/api/foods/**").hasRole("Administrators")
 
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

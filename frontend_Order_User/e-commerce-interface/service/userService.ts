@@ -26,7 +26,7 @@ export const getUserById = async (userId: number): Promise<UserDetail> => {
       email: res.data.email,
       userName: res.data.userName,
       phoneNumber: res.data.phoneNumber,
-      addresses: res.data.addresses?.length || 0,
+      addresses: res.data.addresses,
       createdAt: res.data.createdAt,
     })
     
@@ -37,6 +37,43 @@ export const getUserById = async (userId: number): Promise<UserDetail> => {
   }
 }
 
+
+// edit user 
+export const updateUser = async (userId: number, data: Partial<UserDetail>, avatarFile?: File): Promise<UserDetail> => {
+  try {
+    console.log(`🔍 [userService] Updating user ID: ${userId} with data:`, data)
+    
+    // Convert to FormData for file upload support
+    const formData = new FormData()
+    
+    // Add fields
+    if (data.userName) formData.append('userName', data.userName)
+    if (data.email) formData.append('email', data.email)
+    if (data.phoneNumber) formData.append('phoneNumber', data.phoneNumber)
+    
+    // Add avatar file if provided
+    if (avatarFile) {
+      formData.append('avatar', avatarFile)
+    }
+    
+    const res = await apiClient.patch<UserDetail>(
+      `/users/${userId}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    )
+    console.log(`✅ [userService] User updated:`, res.data)
+    return res.data
+  } catch (error) {
+    console.error("❌ [userService] Error in updateUser:", error)
+    throw error
+  }
+}
+
 export const userService = {
   getUserById,
+  updateUser,
 }
