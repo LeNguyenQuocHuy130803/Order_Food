@@ -89,15 +89,15 @@ export function FilterSidebar({ onFilterChange, initialFilters, categories }: Fi
               className="whitespace-nowrap text-xs lg:text-sm"
             >
               <Star className="h-4 w-4 mr-1 lg:mr-2" />
-              Ban chay
+              Best Seller
             </Button>
             <Button variant="outline" size="sm" className="whitespace-nowrap text-xs lg:text-sm">
               <Filter className="h-4 w-4 mr-1 lg:mr-2" />
-              Loc
+              Location
             </Button>
             <Button variant="outline" size="sm" className="whitespace-nowrap text-xs lg:text-sm">
               <SlidersHorizontal className="h-4 w-4 mr-1 lg:mr-2" />
-              Sap xep
+              More Filters
             </Button>
           </div>
         </div>

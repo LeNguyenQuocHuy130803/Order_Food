@@ -37,6 +37,9 @@ export function ProductHeader() {
           <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
             Drinks
           </Link>
+          <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+            Dessert
+          </Link>
           <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
             Blog
           </Link>
@@ -52,9 +55,6 @@ export function ProductHeader() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="hidden sm:flex">
             <Search className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="hidden sm:flex">
-            <User className="h-5 w-5" />
           </Button>
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
@@ -106,6 +106,13 @@ export function ProductHeader() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Drinks
+            </Link>
+            <Link
+              href="/dessert"
+              className="block rounded-lg px-3 py-2 text-base font-medium text-[#0d0d0d] hover:bg-muted hover:text-[#ff5528]"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Desserts
             </Link>
             <Link
               href="/blog"

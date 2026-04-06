@@ -106,7 +106,7 @@ export default function DrinkPageClient() {
         badge="30-minute delivery"
         headline="Fresh Drinks Every Day"
         description="From traditional coffee to modern milk tea, fresh juice and smoothies. All freshly made and delivered quickly to you."
-        imageSrc="/image/drink1.jpg"
+        imageSrc="/image/drink/drink1.jpg"
         imageAlt="Delicious drinks"
       />
 
