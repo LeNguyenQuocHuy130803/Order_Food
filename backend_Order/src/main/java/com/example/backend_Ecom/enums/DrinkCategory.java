@@ -4,7 +4,8 @@ public enum DrinkCategory {
     COFFEE("Coffee", "Cà phê"),
     MILK_TEA("Milk Tea", "Trà sữa"),
     JUICE("Juice", "Nước ép"),
-    TEA("Tea", "Trà");
+    TEA("Tea", "Trà"),
+    BEAR ("Bear", "Bia");
 
     private final String englishName;
     private final String vietnameseName;

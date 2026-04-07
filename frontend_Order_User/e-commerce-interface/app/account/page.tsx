@@ -10,6 +10,7 @@ import { Header } from '@/app/components/layout/header'
 import { Footer } from '@/app/components/layout/footer'
 import { useUserDetail, useUpdateUserMutation } from '@/lib/api/queries'
 import { ProfileEditForm } from './ProfileEditForm'
+import { ChangePasswordForm } from './ChangePasswordForm'
 import type { UserDetail } from '@/types/user'
 
 export default function AccountPage() {
@@ -48,6 +49,8 @@ export default function AccountPage() {
       console.error('❌ [AccountPage] Error updating profile:', err.message)
     }
   }
+
+
 
   if (loading || !user) {
     return (
@@ -133,6 +136,18 @@ export default function AccountPage() {
                   >
                     <MapPin size={20} />
                     Addresses
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('changePassword')}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-colors ${
+                      activeTab === 'changePassword'
+                        ? 'bg-[#ff5528] text-white'
+                        : 'text-[#0d0d0d] hover:bg-gray-100'
+                    }`}
+                  >
+                    <Edit size={20} />
+                    Change Password
                   </button>
 
                   <button
@@ -329,6 +344,18 @@ export default function AccountPage() {
                         </button>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {activeTab === 'changePassword' && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-[#0d0d0d] mb-8">Change Password</h2>
+                    <ChangePasswordForm
+                      onSuccess={() => {
+                        // Successfully changed password, form will reset itself
+                        console.log('✅ [AccountPage] Password changed successfully')
+                      }}
+                    />
                   </div>
                 )}
 

@@ -18,7 +18,8 @@ public enum Unit {
     BAG("Bag", "bịch"),
     FRUIT("Fruit", "quả"),
     SKEWER("Skewer", "xiên"),
-    ITEM("Item", "cái");
+    ITEM("Item", "cái"),
+    BUNDLE("Bundle", "bó");
 
     private final String englishName;
     private final String vietnameseName;

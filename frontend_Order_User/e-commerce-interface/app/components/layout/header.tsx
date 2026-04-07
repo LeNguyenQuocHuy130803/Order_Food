@@ -211,20 +211,22 @@ export function Header() {
           </div>
         </div>
 
-          <div className="lg:hidden bg-white border-t">
-            <div className="container mx-auto px-4 py-4">
-              <nav className="flex flex-col gap-4">
-                <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Home</Link>
-                <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Food</Link>
-                <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Fresh</Link>
-                <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drink</Link>
-                <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Dessert</Link>
-                <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
-                <Link href="#contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
-
-              </nav>
-            </div>
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="lg:hidden bg-white border-t">
+          <div className="container mx-auto px-4 py-4">
+            <nav className="flex flex-col gap-4">
+              <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Home</Link>
+              <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Food</Link>
+              <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Fresh</Link>
+              <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drink</Link>
+              <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Dessert</Link>
+              <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
+              <Link href="#contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
+            </nav>
           </div>
+        </div>
+      )}
       </div>
     </header>
   )

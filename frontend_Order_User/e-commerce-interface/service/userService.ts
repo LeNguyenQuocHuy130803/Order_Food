@@ -77,3 +77,85 @@ export const userService = {
   getUserById,
   updateUser,
 }
+
+/**
+ * Change user password
+ * @param userId - User ID
+ * @param currentPassword - Current password
+ * @param newPassword - New password
+ */
+export const changePassword = async (
+  userId: number,
+  currentPassword: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  try {
+    console.log(`🔐 [userService] Changing password for user ID: ${userId}`)
+
+    const res = await apiClient.post<{ message: string }>(
+      `/users/${userId}/change-password`,
+      {
+        currentPassword,
+        newPassword,
+      }
+    )
+
+    console.log(`✅ [userService] Password changed successfully:`, res.data.message)
+    return res.data
+  } catch (error) {
+    console.error('❌ [userService] Error in changePassword:', error)
+    throw error
+  }
+}
+
+/**
+ * Request password reset - send OTP to email
+ * @param email - User email
+ */
+export const requestPasswordReset = async (email: string): Promise<{ message: string }> => {
+  try {
+    console.log(`📧 [userService] Requesting password reset for email: ${email}`)
+
+    const res = await apiClient.post<{ message: string }>(
+      `/auth/forgot-password`,
+      { email }
+    )
+
+    console.log(`✅ [userService] OTP sent to email:`, res.data.message)
+    return res.data
+  } catch (error) {
+    console.error('❌ [userService] Error in requestPasswordReset:', error)
+    throw error
+  }
+}
+
+/**
+ * Reset password with OTP
+ * @param email - User email
+ * @param otp - OTP from email
+ * @param newPassword - New password
+ */
+export const resetPassword = async (
+  email: string,
+  otp: string,
+  newPassword: string
+): Promise<{ message: string }> => {
+  try {
+    console.log(`🔐 [userService] Resetting password for email: ${email}`)
+
+    const res = await apiClient.post<{ message: string }>(
+      `/auth/reset-password`,
+      {
+        email,
+        otp,
+        newPassword,
+      }
+    )
+
+    console.log(`✅ [userService] Password reset successfully:`, res.data.message)
+    return res.data
+  } catch (error) {
+    console.error('❌ [userService] Error in resetPassword:', error)
+    throw error
+  }
+}
