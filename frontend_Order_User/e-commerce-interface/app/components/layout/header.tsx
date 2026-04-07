@@ -100,21 +100,11 @@ export function Header() {
                 Dessert
               </Link>
 
-              <Link href="#about" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
-                About
-              </Link>
-              <div className="relative group">
-                <button className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors flex items-center gap-1">
-                  Pages <ChevronDown className="w-4 h-4" />
-                </button>
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Our Chefs</Link>
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">Gallery</Link>
-                  <Link href="#" className="block px-4 py-3 hover:bg-[#ff5528] hover:text-white transition-colors">FAQ</Link>
-                </div>
-              </div>
-              <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+              <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Blog
+              </Link>
+              <Link href="/about_us" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
+                About us
               </Link>
               <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] transition-colors">
                 Contact
@@ -221,8 +211,9 @@ export function Header() {
               <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Fresh</Link>
               <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drink</Link>
               <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Dessert</Link>
-              <Link href="#" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
-              <Link href="#contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
+              <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
+              <Link href="/about_us" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">About Us</Link>
+              <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
             </nav>
           </div>
         </div>
