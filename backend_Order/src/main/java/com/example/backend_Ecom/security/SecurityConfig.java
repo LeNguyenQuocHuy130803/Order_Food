@@ -43,7 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").permitAll()
                         
                         // ✅ CART & ORDER - CẦN AUTHENTICATION
-                        .requestMatchers("/api/carts/**").permitAll()
+                        .requestMatchers("/api/carts/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
                         .requestMatchers("/api/stocks/**").authenticated()
 

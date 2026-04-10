@@ -4,6 +4,7 @@ import Image from "next/image"
 import { Heart } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
+import { CartService } from "@/service/CartService"
 
 interface Product {
   id: number
@@ -20,10 +21,49 @@ interface ProductCardProps {
 // file này dùng để hiển thị giao diện card sản phẩm chung cho cả 3 loại: drink, food, fresh
 export default function ProductCard({ product, type }: ProductCardProps) {
   const [isFavorited, setIsFavorited] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
   const { id, name, imageUrl, featured, price } = product
 
   const detailHref = `/${type}/${id}`
+
+  // 🛒 Xử lý thêm sản phẩm vào giỏ hàng
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    try {
+      setLoading(true)
+      setError(null)
+      setSuccess(false)
+
+      // Convert type thành productType (food → FOOD, drink → DRINK, etc)
+      const productType = type.toUpperCase()
+      const quantity = 1
+
+      console.log(`🛒 [ProductCard] Adding to cart:`, { productType, productId: id, quantity })
+
+      // ✅ Gọi CartService để thêm vào giỏ hàng (dùng accessToken từ cookies)
+      const cartData = await CartService.addProductToCart(productType, id, quantity)
+
+      console.log(`✅ [ProductCard] Added to cart success:`, cartData)
+      setSuccess(true)
+
+      // Ẩn success message sau 2 giây
+      setTimeout(() => setSuccess(false), 2000)
+    } catch (err: any) {
+      const errorMsg = err.message || 'Failed to add to cart'
+      console.error(`❌ [ProductCard] Error:`, errorMsg)
+      setError(errorMsg)
+
+      // Ẩn error message sau 3 giây
+      setTimeout(() => setError(null), 3000)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <Link href={detailHref}>
@@ -68,14 +108,52 @@ export default function ProductCard({ product, type }: ProductCardProps) {
             )}
           </div>
 
+          {/* Message: Success - Modal Style */}
+          {success && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+              <div className="bg-white rounded-lg p-8 max-w-sm text-center shadow-lg">
+                {/* Checkmark Icon */}
+                <div className="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+
+                {/* Message */}
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Sản phẩm{" "}
+                  <span className="text-red-500 font-extrabold">
+                    {name}
+                  </span>{" "}
+                  đã được thêm vào Giỏ hàng
+                </h3>
+              </div>
+            </div>
+          )}
+
+          {/* Message: Error */}
+          {error && (
+            <div className="mb-2 text-xs text-red-600 bg-red-50 p-2 rounded">
+              ✗ {error}
+            </div>
+          )}
+
           <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-            }}
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg text-sm"
+            onClick={handleAddToCart}
+            disabled={loading}
+            className="w-full bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors"
           >
-            Order
+            {loading ? '⏳ Adding...' : 'Order'}
           </button>
         </div>
 

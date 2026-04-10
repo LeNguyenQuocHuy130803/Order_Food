@@ -7,6 +7,7 @@ import { Heart, ArrowLeft, ShoppingCart } from "lucide-react";
 
 import type { Food } from "@/types/food";
 import { FoodService } from "@/service/FoodService";
+import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
 
@@ -21,6 +22,47 @@ export default function FoodDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [cartSuccess, setCartSuccess] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
+
+  // 🛒 Xử lý thêm sản phẩm vào giỏ hàng
+  const handleAddToCart = async () => {
+    try {
+      setIsAddingToCart(true);
+      setCartError(null);
+      setCartSuccess(false);
+
+      if (!food) return;
+
+      console.log(`🛒 [FoodDetailPage] Adding to cart:`, {
+        productType: "FOOD",
+        productId: food.id,
+        quantity,
+      });
+
+      // ✅ Gọi CartService để thêm vào giỏ hàng
+      const cartData = await CartService.addProductToCart("FOOD", food.id, quantity);
+
+      console.log(`✅ [FoodDetailPage] Added to cart success:`, cartData);
+      setCartSuccess(true);
+
+      // Reset quantity
+      setQuantity(1);
+
+      // Ẩn success message sau 2 giây
+      setTimeout(() => setCartSuccess(false), 2000);
+    } catch (err: any) {
+      const errorMsg = err.message || "Failed to add to cart";
+      console.error(`❌ [FoodDetailPage] Error:`, errorMsg);
+      setCartError(errorMsg);
+
+      // Ẩn error message sau 3 giây
+      setTimeout(() => setCartError(null), 3000);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   useEffect(() => {
     const fetchFoodDetail = async () => {
@@ -236,19 +278,80 @@ export default function FoodDetailPage() {
 
             {/* Order Button */}
             <button
-              disabled={food.quantity === 0}
+              onClick={handleAddToCart}
+              disabled={food.quantity === 0 || isAddingToCart}
               className={`w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 ${
-                food.quantity === 0
+                food.quantity === 0 || isAddingToCart
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl active:scale-95"
               }`}
             >
               <ShoppingCart size={24} />
-              <span>Order Now ({quantity} items)</span>
+              <span>
+                {isAddingToCart ? "Adding..." : `Order Now (${quantity} items)`}
+              </span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {cartSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm text-center shadow-lg">
+            {/* Checkmark Icon */}
+            <div className="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+
+            {/* Message */}
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Sản phẩm đã được thêm vào Giỏ hàng
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              {food?.name}
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCartSuccess(false)}
+                className="flex-1 border border-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-50 transition"
+              >
+                Xem Tiếp
+              </button>
+              <button
+                onClick={() => {
+                  setCartSuccess(false);
+                  // TODO: Navigate to cart page
+                }}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+              >
+                Xem Giỏ Hàng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Alert */}
+      {cartError && (
+        <div className="fixed top-4 right-4 bg-red-50 border border-red-200 rounded-lg p-4 shadow-lg z-50 max-w-sm">
+          <p className="text-red-800 font-medium">✗ {cartError}</p>
+        </div>
+      )}
 
       <Footer />
     </main>
