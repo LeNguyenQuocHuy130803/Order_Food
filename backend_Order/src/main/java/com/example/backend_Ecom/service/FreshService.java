@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,6 +30,9 @@ public class FreshService {
     private final FreshRepository freshRepository;
     private final FileUploadService fileUploadService;
 
+
+
+    @Transactional
     public FreshResponseDto createFresh(FreshRequestDto request) {
 
         if (request.getName() == null || request.getName().trim().isEmpty()) {
@@ -45,25 +49,42 @@ public class FreshService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Fresh product name already exists");
         }
 
-        String imageUrl = resolveImage(request, null);
+        String uploadedImageUrl = null;
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                uploadedImageUrl = fileUploadService.uploadImage(request.getImage());
+            } else if (request.getImageUrl() != null) {
+                uploadedImageUrl = request.getImageUrl();
+            }
 
-        Fresh fresh = Fresh.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .quantity(request.getQuantity())
-                .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : FreshCategory.VEGETABLE)
-                .featured(request.getFeatured() != null ? request.getFeatured() : false)
-                .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
-                .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
-                .build();
+            Fresh fresh = Fresh.builder()
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .price(request.getPrice())
+                    .quantity(request.getQuantity())
+                    .imageUrl(uploadedImageUrl)
+                    .category(request.getCategory() != null ? request.getCategory() : FreshCategory.VEGETABLE)
+                    .featured(request.getFeatured() != null ? request.getFeatured() : false)
+                    .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
+                    .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
+                    .build();
 
-        fresh = freshRepository.save(fresh);
+            fresh = freshRepository.save(fresh);
+            return mapToDto(fresh);
 
-        return mapToDto(fresh);
+        } catch (Exception e) {
+            if (uploadedImageUrl != null && request.getImage() != null && !request.getImage().isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(uploadedImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned image: {}", uploadedImageUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to create fresh product: " + e.getMessage());
+        }
     }
 
+    @Transactional
     public FreshResponseDto updateFresh(Long id, FreshRequestDto request) {
 
         Fresh fresh = freshRepository.findById(id)
@@ -76,36 +97,68 @@ public class FreshService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Fresh product name already exists");
         }
 
-        if (request.getName() != null) fresh.setName(request.getName());
-        if (request.getDescription() != null) fresh.setDescription(request.getDescription());
-        if (request.getPrice() != null) fresh.setPrice(request.getPrice());
-        if (request.getQuantity() != null) fresh.setQuantity(request.getQuantity());
-        if (request.getCategory() != null) fresh.setCategory(request.getCategory());
-        if (request.getFeatured() != null) fresh.setFeatured(request.getFeatured());
-        if (request.getUnit() != null) fresh.setUnit(request.getUnit());
-        if (request.getRegion() != null) fresh.setRegion(request.getRegion());
+        String oldImageUrl = fresh.getImageUrl();
+        String newlyUploadedUrl = null;
 
-        String imageUrl = resolveImage(request, fresh.getImageUrl());
-        if (imageUrl != null) fresh.setImageUrl(imageUrl);
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                newlyUploadedUrl = fileUploadService.uploadImage(request.getImage());
+                fresh.setImageUrl(newlyUploadedUrl);
+            } else if (request.getImageUrl() != null) {
+                fresh.setImageUrl(request.getImageUrl());
+            }
 
-        fresh = freshRepository.save(fresh);
+            if (request.getName() != null) fresh.setName(request.getName());
+            if (request.getDescription() != null) fresh.setDescription(request.getDescription());
+            if (request.getPrice() != null) fresh.setPrice(request.getPrice());
+            if (request.getQuantity() != null) fresh.setQuantity(request.getQuantity());
+            if (request.getCategory() != null) fresh.setCategory(request.getCategory());
+            if (request.getFeatured() != null) fresh.setFeatured(request.getFeatured());
+            if (request.getUnit() != null) fresh.setUnit(request.getUnit());
+            if (request.getRegion() != null) fresh.setRegion(request.getRegion());
 
-        log.info("✓ Fresh product updated: {}", id);
-        return mapToDto(fresh);
+            fresh = freshRepository.save(fresh);
+
+            if (newlyUploadedUrl != null && oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(oldImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete old image: {}", oldImageUrl);
+                }
+            }
+
+            log.info("✓ Fresh product updated: {}", id);
+            return mapToDto(fresh);
+
+        } catch (Exception e) {
+            if (newlyUploadedUrl != null) {
+                try {
+                    fileUploadService.deleteImage(newlyUploadedUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned new image: {}", newlyUploadedUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to update fresh product: " + e.getMessage());
+        }
     }
 
+    @Transactional
     public void deleteFresh(Long id) {
-
         Fresh fresh = freshRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
 
+        freshRepository.delete(fresh);
+        freshRepository.flush();
+
         if (fresh.getImageUrl() != null) {
-            fileUploadService.deleteImage(fresh.getImageUrl());
+            try {
+                fileUploadService.deleteImage(fresh.getImageUrl());
+            } catch (Exception e) {
+                log.warn("⚠️ Fresh {} deletion failed: Cloudinary image deletion error: {}", id, e.getMessage());
+            }
         }
 
-        freshRepository.delete(fresh);
-
-        log.info("✓ Fresh product deleted: {}", id);
+        log.info("✓ Fresh deleted successfully: {}", id);
     }
 
     public FreshResponseDto getFreshById(Long id) {
@@ -118,6 +171,8 @@ public class FreshService {
 
     public PaginatedFreshResponseDto getAllFreshProductsPaginated(int page, int size) {
         // Convert 1-based page to 0-based for Spring Data
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
         Pageable pageable = PageRequest.of(page - 1, size);
 
         // Lấy dữ liệu phân trang từ repository
@@ -151,23 +206,7 @@ public class FreshService {
                 .collect(Collectors.toList());
     }
 
-    private String resolveImage(FreshRequestDto request, String currentImage) {
-
-        if (request.getImage() != null && !request.getImage().isEmpty()) {
-
-            if (currentImage != null) {
-                fileUploadService.deleteImage(currentImage);
-            }
-
-            return fileUploadService.uploadImage(request.getImage());
-        }
-
-        if (request.getImageUrl() != null) {
-            return request.getImageUrl();
-        }
-
-        return currentImage;
-    }
+    // Hàm resolveImage đã bị xóa bỏ vì không hợp lệ với Transactions
 
     private FreshResponseDto mapToDto(Fresh fresh) {
 

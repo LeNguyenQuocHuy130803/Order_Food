@@ -9,6 +9,7 @@ import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
 import com.example.backend_Ecom.repository.AddressRepository;
 import com.example.backend_Ecom.repository.UserJpaRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class AddressService {
 
     private final AddressRepository addressRepository;

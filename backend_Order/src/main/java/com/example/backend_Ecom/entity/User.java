@@ -1,6 +1,7 @@
 package com.example.backend_Ecom.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.example.backend_Ecom.enums.UserStatus;
@@ -12,7 +13,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    // ✅ FIX Lỗi 5: Đánh Index cho email và phone_number
+    // Query existsByEmail / existsByPhone sẽ dùng Index, không Full Table Scan nữa
+    indexes = {
+        @Index(name = "idx_users_email", columnList = "email"),
+        @Index(name = "idx_users_phone", columnList = "phone_number")
+    }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -30,9 +39,10 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private List<Role> roles;
+    @Builder.Default
+    private List<Role> roles = new ArrayList<>();
 
     @Column(name = "phone_number", nullable = false, unique = true)
     private String phoneNumber;
@@ -72,6 +82,14 @@ public class User {
     @Column(name = "avatar_url")
     private String avatar;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    private List<Address> addresses;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Address> addresses = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Cart cart;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Order> orders = new ArrayList<>();
 }

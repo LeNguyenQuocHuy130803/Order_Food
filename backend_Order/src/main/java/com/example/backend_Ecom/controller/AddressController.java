@@ -28,7 +28,7 @@ public class AddressController {
      * Required: Authentication token
      */
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
     @Operation(summary = "Get all addresses for user")
     public ResponseEntity<List<AddressResponseDto>> getAddressesByUserId(
             @Parameter(description = "User ID", example = "1")
@@ -42,7 +42,7 @@ public class AddressController {
      * Required: Authentication token
      */
     @GetMapping("/{addressId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
     @Operation(summary = "Get address by ID")
     public ResponseEntity<AddressResponseDto> getAddressById(
             @Parameter(description = "User ID", example = "1")
@@ -65,7 +65,7 @@ public class AddressController {
      * }
      */
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
     @Operation(summary = "Create new address")
     public ResponseEntity<AddressResponseDto> createAddress(
             @Parameter(description = "User ID", example = "1")
@@ -81,7 +81,7 @@ public class AddressController {
      * Required: Authentication token
      */
     @PatchMapping("/{addressId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
     @Operation(summary = "Update address")
     public ResponseEntity<AddressResponseDto> updateAddress(
             @Parameter(description = "User ID", example = "1")
@@ -98,7 +98,7 @@ public class AddressController {
      * Required: Authentication token
      */
     @DeleteMapping("/{addressId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
     @Operation(summary = "Delete address")
     public ResponseEntity<MessageResponseDto> deleteAddress(
             @Parameter(description = "User ID", example = "1")

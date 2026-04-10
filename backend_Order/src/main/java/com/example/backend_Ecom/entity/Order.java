@@ -1,0 +1,53 @@
+package com.example.backend_Ecom.entity;
+
+import com.example.backend_Ecom.enums.OrderStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "orders")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(nullable = false)
+    private Long totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
+
+    @Column(nullable = false)
+    private String address; // Full delivery address
+
+    @Column(columnDefinition = "TEXT")
+    private String notes; // Additional notes/instructions
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+}

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,6 +30,9 @@ public class FoodService {
     private final FoodRepository foodRepository;
     private final FileUploadService fileUploadService;
 
+
+
+    @Transactional
     public FoodResponseDto createFood(FoodRequestDto request) {
 
         if (request.getName() == null || request.getName().trim().isEmpty()) {
@@ -45,25 +49,43 @@ public class FoodService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Food name already exists");
         }
 
-        String imageUrl = resolveImage(request, null);
+        String uploadedImageUrl = null;
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                uploadedImageUrl = fileUploadService.uploadImage(request.getImage());
+            } else if (request.getImageUrl() != null) {
+                uploadedImageUrl = request.getImageUrl();
+            }
 
-        Food food = Food.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .quantity(request.getQuantity())
-                .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : FoodCategory.RICE)
-                .featured(request.getFeatured() != null ? request.getFeatured() : false)
-                .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
-                .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
-                .build();
+            Food food = Food.builder()
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .price(request.getPrice())
+                    .quantity(request.getQuantity())
+                    .imageUrl(uploadedImageUrl)
+                    .category(request.getCategory() != null ? request.getCategory() : FoodCategory.RICE)
+                    .featured(request.getFeatured() != null ? request.getFeatured() : false)
+                    .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
+                    .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
+                    .build();
 
-        food = foodRepository.save(food);
+            food = foodRepository.save(food);
+            return mapToDto(food);
 
-        return mapToDto(food);
+        } catch (Exception e) {
+            // COMPENSATING TRANSACTION: Xóa ảnh mồ côi nếu DB lưu lỗi
+            if (uploadedImageUrl != null && request.getImage() != null && !request.getImage().isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(uploadedImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned image: {}", uploadedImageUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to create food: " + e.getMessage());
+        }
     }
 
+    @Transactional
     public FoodResponseDto updateFood(Long id, FoodRequestDto request) {
 
         Food food = foodRepository.findById(id)
@@ -76,36 +98,72 @@ public class FoodService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Food name already exists");
         }
 
-        if (request.getName() != null) food.setName(request.getName());
-        if (request.getDescription() != null) food.setDescription(request.getDescription());
-        if (request.getPrice() != null) food.setPrice(request.getPrice());
-        if (request.getQuantity() != null) food.setQuantity(request.getQuantity());
-        if (request.getCategory() != null) food.setCategory(request.getCategory());
-        if (request.getFeatured() != null) food.setFeatured(request.getFeatured());
-        if (request.getUnit() != null) food.setUnit(request.getUnit());
-        if (request.getRegion() != null) food.setRegion(request.getRegion());
+        String oldImageUrl = food.getImageUrl();
+        String newlyUploadedUrl = null;
 
-        String imageUrl = resolveImage(request, food.getImageUrl());
-        if (imageUrl != null) food.setImageUrl(imageUrl);
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                newlyUploadedUrl = fileUploadService.uploadImage(request.getImage());
+                food.setImageUrl(newlyUploadedUrl);
+            } else if (request.getImageUrl() != null) {
+                food.setImageUrl(request.getImageUrl());
+            }
 
-        food = foodRepository.save(food);
+            if (request.getName() != null) food.setName(request.getName());
+            if (request.getDescription() != null) food.setDescription(request.getDescription());
+            if (request.getPrice() != null) food.setPrice(request.getPrice());
+            if (request.getQuantity() != null) food.setQuantity(request.getQuantity());
+            if (request.getCategory() != null) food.setCategory(request.getCategory());
+            if (request.getFeatured() != null) food.setFeatured(request.getFeatured());
+            if (request.getUnit() != null) food.setUnit(request.getUnit());
+            if (request.getRegion() != null) food.setRegion(request.getRegion());
 
-        log.info("✓ Food updated: {}", id);
-        return mapToDto(food);
+            food = foodRepository.save(food);
+
+            // CHỈ XOÁ ẢNH CŨ KHI SAVE THÀNH CÔNG
+            if (newlyUploadedUrl != null && oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(oldImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete old image: {}", oldImageUrl);
+                }
+            }
+
+            log.info("✓ Food updated: {}", id);
+            return mapToDto(food);
+
+        } catch (Exception e) {
+            // COMPENSATING TRANSACTION: Xoá ảnh mới tải lên nếu update DB thất bại
+            if (newlyUploadedUrl != null) {
+                try {
+                    fileUploadService.deleteImage(newlyUploadedUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned new image: {}", newlyUploadedUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to update food: " + e.getMessage());
+        }
     }
 
+    @Transactional
     public void deleteFood(Long id) {
-
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food not found"));
 
+        foodRepository.delete(food);
+        foodRepository.flush();
+
+        // Chỉ sau khi DB commit xong, mới xóa ảnh Cloudinary (an toàn tuyệt đối!)
         if (food.getImageUrl() != null) {
-            fileUploadService.deleteImage(food.getImageUrl());
+            try {
+                fileUploadService.deleteImage(food.getImageUrl());
+            } catch (Exception e) {
+                log.warn("⚠️ Food {} deletion failed: Cloudinary image deletion error: {}", id, e.getMessage());
+                // Log warning but don't fail the deletion - Cloudinary error shouldn't prevent deletion
+            }
         }
 
-        foodRepository.delete(food);
-
-        log.info("✓ Food deleted: {}", id);
+        log.info("✓ Food deleted successfully: {}", id);
     }
 
     public FoodResponseDto getFoodById(Long id) {
@@ -118,6 +176,8 @@ public class FoodService {
 
     public PaginatedFoodResponseDto getAllFoodsPaginated(int page, int size) {
         // Convert 1-based page to 0-based for Spring Data
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
         Pageable pageable = PageRequest.of(page - 1, size);
 
         // Lấy dữ liệu phân trang từ repository
@@ -151,23 +211,7 @@ public class FoodService {
                 .collect(Collectors.toList());
     }
 
-    private String resolveImage(FoodRequestDto request, String currentImage) {
-
-        if (request.getImage() != null && !request.getImage().isEmpty()) {
-
-            if (currentImage != null) {
-                fileUploadService.deleteImage(currentImage);
-            }
-
-            return fileUploadService.uploadImage(request.getImage());
-        }
-
-        if (request.getImageUrl() != null) {
-            return request.getImageUrl();
-        }
-
-        return currentImage;
-    }
+    // Hàm resolveImage đã bị xóa bỏ vì không hợp lệ với Transactions
 
     private FoodResponseDto mapToDto(Food food) {
 

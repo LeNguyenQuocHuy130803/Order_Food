@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,9 +30,12 @@ public class DessertService {
     private final DessertRepository dessertRepository;
     private final FileUploadService fileUploadService;
 
+
+
     /**
      * Tạo dessert mới
      */
+    @Transactional
     public DessertResponseDto createDessert(DessertRequestDto request) {
 
         if (request.getName() == null || request.getName().trim().isEmpty()) {
@@ -48,29 +52,46 @@ public class DessertService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Dessert name already exists");
         }
 
-        String imageUrl = resolveImage(request, null);
+        String uploadedImageUrl = null;
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                uploadedImageUrl = fileUploadService.uploadImage(request.getImage());
+            } else if (request.getImageUrl() != null) {
+                uploadedImageUrl = request.getImageUrl();
+            }
 
-        Dessert dessert = Dessert.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .price(request.getPrice())
-                .quantity(request.getQuantity())
-                .imageUrl(imageUrl)
-                .category(request.getCategory() != null ? request.getCategory() : DessertCategory.CAKE)
-                .featured(request.getFeatured() != null ? request.getFeatured() : false)
-                .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
-                .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
-                .build();
+            Dessert dessert = Dessert.builder()
+                    .name(request.getName())
+                    .description(request.getDescription())
+                    .price(request.getPrice())
+                    .quantity(request.getQuantity())
+                    .imageUrl(uploadedImageUrl)
+                    .category(request.getCategory() != null ? request.getCategory() : DessertCategory.CAKE)
+                    .featured(request.getFeatured() != null ? request.getFeatured() : false)
+                    .unit(request.getUnit() != null ? request.getUnit() : Unit.ITEM)
+                    .region(request.getRegion() != null ? request.getRegion() : Region.HA_NOI)
+                    .build();
 
-        dessert = dessertRepository.save(dessert);
+            dessert = dessertRepository.save(dessert);
+            log.info("✓ Dessert created: {}", dessert.getId());
+            return mapToDto(dessert);
 
-        log.info("✓ Dessert created: {}", dessert.getId());
-        return mapToDto(dessert);
+        } catch (Exception e) {
+            if (uploadedImageUrl != null && request.getImage() != null && !request.getImage().isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(uploadedImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned image: {}", uploadedImageUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to create dessert: " + e.getMessage());
+        }
     }
 
     /**
      * Cập nhật dessert
      */
+    @Transactional
     public DessertResponseDto updateDessert(Long id, DessertRequestDto request) {
 
         Dessert dessert = dessertRepository.findById(id)
@@ -83,39 +104,71 @@ public class DessertService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Dessert name already exists");
         }
 
-        if (request.getName() != null) dessert.setName(request.getName());
-        if (request.getDescription() != null) dessert.setDescription(request.getDescription());
-        if (request.getPrice() != null) dessert.setPrice(request.getPrice());
-        if (request.getQuantity() != null) dessert.setQuantity(request.getQuantity());
-        if (request.getCategory() != null) dessert.setCategory(request.getCategory());
-        if (request.getFeatured() != null) dessert.setFeatured(request.getFeatured());
-        if (request.getUnit() != null) dessert.setUnit(request.getUnit());
-        if (request.getRegion() != null) dessert.setRegion(request.getRegion());
+        String oldImageUrl = dessert.getImageUrl();
+        String newlyUploadedUrl = null;
 
-        String imageUrl = resolveImage(request, dessert.getImageUrl());
-        if (imageUrl != null) dessert.setImageUrl(imageUrl);
+        try {
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                newlyUploadedUrl = fileUploadService.uploadImage(request.getImage());
+                dessert.setImageUrl(newlyUploadedUrl);
+            } else if (request.getImageUrl() != null) {
+                dessert.setImageUrl(request.getImageUrl());
+            }
 
-        dessert = dessertRepository.save(dessert);
+            if (request.getName() != null) dessert.setName(request.getName());
+            if (request.getDescription() != null) dessert.setDescription(request.getDescription());
+            if (request.getPrice() != null) dessert.setPrice(request.getPrice());
+            if (request.getQuantity() != null) dessert.setQuantity(request.getQuantity());
+            if (request.getCategory() != null) dessert.setCategory(request.getCategory());
+            if (request.getFeatured() != null) dessert.setFeatured(request.getFeatured());
+            if (request.getUnit() != null) dessert.setUnit(request.getUnit());
+            if (request.getRegion() != null) dessert.setRegion(request.getRegion());
 
-        log.info("✓ Dessert updated: {}", id);
-        return mapToDto(dessert);
+            dessert = dessertRepository.save(dessert);
+
+            if (newlyUploadedUrl != null && oldImageUrl != null && !oldImageUrl.isEmpty()) {
+                try {
+                    fileUploadService.deleteImage(oldImageUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete old image: {}", oldImageUrl);
+                }
+            }
+
+            log.info("✓ Dessert updated: {}", id);
+            return mapToDto(dessert);
+
+        } catch (Exception e) {
+            if (newlyUploadedUrl != null) {
+                try {
+                    fileUploadService.deleteImage(newlyUploadedUrl);
+                } catch (Exception ex) {
+                    log.error("Failed to delete orphaned new image: {}", newlyUploadedUrl);
+                }
+            }
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to update dessert: " + e.getMessage());
+        }
     }
 
     /**
      * Xóa dessert
      */
+    @Transactional
     public void deleteDessert(Long id) {
-
         Dessert dessert = dessertRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert not found"));
 
+        dessertRepository.delete(dessert);
+        dessertRepository.flush();
+
         if (dessert.getImageUrl() != null) {
-            fileUploadService.deleteImage(dessert.getImageUrl());
+            try {
+                fileUploadService.deleteImage(dessert.getImageUrl());
+            } catch (Exception e) {
+                log.warn("⚠️ Dessert {} deletion failed: Cloudinary image deletion error: {}", id, e.getMessage());
+            }
         }
 
-        dessertRepository.delete(dessert);
-
-        log.info("✓ Dessert deleted: {}", id);
+        log.info("✓ Dessert deleted successfully: {}", id);
     }
 
     /**
@@ -134,6 +187,8 @@ public class DessertService {
      */
     public PaginatedDessertResponseDto getAllDessertsPaginated(int page, int size) {
         // Convert 1-based page to 0-based for Spring Data
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
         Pageable pageable = PageRequest.of(page - 1, size);
 
         // Lấy dữ liệu phân trang từ repository
@@ -170,26 +225,7 @@ public class DessertService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Helper: Xử lý upload ảnh (có file hoặc URL)
-     */
-    private String resolveImage(DessertRequestDto request, String currentImage) {
-
-        if (request.getImage() != null && !request.getImage().isEmpty()) {
-
-            if (currentImage != null) {
-                fileUploadService.deleteImage(currentImage);
-            }
-
-            return fileUploadService.uploadImage(request.getImage());
-        }
-
-        if (request.getImageUrl() != null) {
-            return request.getImageUrl();
-        }
-
-        return currentImage;
-    }
+    // Hàm resolveImage đã bị xóa bỏ vì không hợp lệ với Transactions
 
     /**
      * Helper: Convert Dessert entity sang DessertResponseDto

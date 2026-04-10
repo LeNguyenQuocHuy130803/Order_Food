@@ -1,4 +1,4 @@
-package com.example.backend_Ecom.config;
+package com.example.backend_Ecom.security;
 
 import lombok.NonNull;
 import org.springframework.context.annotation.Bean;

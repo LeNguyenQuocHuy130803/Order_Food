@@ -2,12 +2,20 @@ package com.example.backend_Ecom.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
-@Table(name = "verification_tokens")
+@Table(
+    name = "verification_tokens",
+    // ✅ FIX Lỗi #8: Đánh Index composite (user_id + used) — tăng tốc query findByUserIdAndUsedFalse
+    // Trước: Full Table Scan O(N) | Sau: Index Seek O(log N)
+    indexes = {
+        @Index(name = "idx_vt_user_id_used", columnList = "user_id, used")
+    }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -36,6 +44,7 @@ public class VerificationToken {
     @Builder.Default
     private Boolean used = false;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

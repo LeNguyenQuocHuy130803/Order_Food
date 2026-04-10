@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,7 @@ import org.springframework.data.domain.Pageable;
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class UserService {
     // Account Lockout Configuration
     private static final int MAX_LOGIN_ATTEMPTS = 5;
@@ -265,7 +267,7 @@ public class UserService {
         User user = userJpaRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Forgot password failed: User not found for email: {}", request.getEmail());
-                    throw new AppException(ErrorCode.USER_NOT_FOUND, "User not found");
+                    return new AppException(ErrorCode.USER_NOT_FOUND, "User not found");
                 });
         
         // Generate OTP for password reset
@@ -306,7 +308,7 @@ public class UserService {
         User user = userJpaRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> {
                     log.warn("Password reset failed: User not found for email: {}", request.getEmail());
-                    throw new AppException(ErrorCode.USER_NOT_FOUND, "User not found");
+                    return new AppException(ErrorCode.USER_NOT_FOUND, "User not found");
                 });
         
         // Validate OTP format
@@ -485,6 +487,9 @@ public class UserService {
      * Get all users with pagination
      */
     public PaginatedUserResponseDto getAllUsersPaginated(int page, int size) {
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+        
         // Convert 1-based page to 0-based for Spring Data
         Pageable pageable = PageRequest.of(page - 1, size);
 
@@ -548,37 +553,37 @@ public class UserService {
             user.setPhoneNumber(request.getPhoneNumber());
         }
         
-        // Handle avatar - either upload file or use URL
-        String avatarUrl = resolveAvatar(request, user.getAvatar());
-        if (avatarUrl != null) {
-            user.setAvatar(avatarUrl);
-        }
+        // Handle avatar - either upload file or use URL  
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            // ✅ FIX Lỗi #10: Thu tự an toàn: Upload mới → Save DB → flush() xác nhận → Mới xóa cũ
+            // (Trước: xóa cũ trước, upload mới, rồi save → nếu save xật = zombie URL)
+            String oldAvatarUrl = user.getAvatar();
+            String newAvatarUrl = fileUploadService.uploadImage(request.getAvatar());
+            user.setAvatar(newAvatarUrl);
+            user = userJpaRepository.save(user);
+            userJpaRepository.flush(); // Ép commit xuống DB trước khi xóa ảnh cũ
 
-        user = userJpaRepository.save(user);
+            // Chỉ sau khi DB đã commit, mới thực sự xóa ảnh cũ trên Cloudinary
+            if (oldAvatarUrl != null) {
+                try {
+                    fileUploadService.deleteImage(oldAvatarUrl);
+                } catch (Exception e) {
+                    log.warn("⚠️ Avatar updated in DB but old Cloudinary image deletion failed for user: {}. URL: {}", id, oldAvatarUrl);
+                    // Không throw → không rollback DB vì DB đã commit thành công rồi
+                }
+            }
+        } else if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
+            user.setAvatar(request.getAvatarUrl());
+            user = userJpaRepository.save(user);
+        } else {
+            user = userJpaRepository.save(user);
+        }
         log.info("User updated successfully: {}", id);
         
         return mapToDto(user);
     }
 
-    /**
-     * Resolve avatar - either upload file or use URL
-     */
-    private String resolveAvatar(UserUpdateRequestDto request, String currentAvatar) {
-        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
-            // Delete old avatar if exists
-            if (currentAvatar != null) {
-                fileUploadService.deleteImage(currentAvatar);
-            }
-            // Upload new avatar
-            return fileUploadService.uploadImage(request.getAvatar());
-        }
 
-        if (request.getAvatarUrl() != null && !request.getAvatarUrl().isBlank()) {
-            return request.getAvatarUrl();
-        }
-
-        return currentAvatar;
-    }
 
     /**
      * Map User entity to UserResponseDto

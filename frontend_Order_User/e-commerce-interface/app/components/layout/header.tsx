@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, ShoppingCart, Search, Phone, Mail, MapPin, Clock, ChevronDown, User } from "lucide-react"
+import { Menu, X, ShoppingCart, Search,  User } from "lucide-react"
 import { Button } from "../ui/button"
 import { SearchFilter } from "../search_filter"
 import { useAuth } from "@/hooks/useAuth"
@@ -11,7 +11,7 @@ import { useUserDetail } from "@/lib/api/queries"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [cartCount] = useState(2)
+  const [cartCount] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [scrollOpacity, setScrollOpacity] = useState(1)
   const { user, loading, isAuthenticated, logout } = useAuth()
