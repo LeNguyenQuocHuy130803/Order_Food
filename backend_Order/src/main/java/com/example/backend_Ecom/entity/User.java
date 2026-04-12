@@ -15,8 +15,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(
     name = "users",
-    // ✅ FIX Lỗi 5: Đánh Index cho email và phone_number
-    // Query existsByEmail / existsByPhone sẽ dùng Index, không Full Table Scan nữa
     indexes = {
         @Index(name = "idx_users_email", columnList = "email"),
         @Index(name = "idx_users_phone", columnList = "phone_number")
