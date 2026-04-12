@@ -3,15 +3,15 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, ShoppingCart, Search,  User } from "lucide-react"
+import { Menu, X, ShoppingCart, Search, User } from "lucide-react"
 import { Button } from "../ui/button"
 import { SearchFilter } from "../search_filter"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserDetail } from "@/lib/api/queries"
+import { useCartQuery } from "@/hooks/useCartQuery"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [cartCount] = useState(0)
   const [showSearch, setShowSearch] = useState(false)
   const [scrollOpacity, setScrollOpacity] = useState(1)
   const { user, loading, isAuthenticated, logout } = useAuth()
@@ -20,6 +20,9 @@ export function Header() {
 
   // ✅ Fetch updated user profile from React Query
   const { data: profile } = useUserDetail(user?.id ?? 0)
+
+  // ✅ Fetch cart count từ API (với auto-refresh token)
+  const { itemCount, refetch: refetchCart } = useCartQuery()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -62,9 +65,9 @@ export function Header() {
   return (
     <header className="w-full relative">
       <SearchFilter showSearch={showSearch} setShowSearch={setShowSearch} />
-      
+
       {/* Main Header */}
-      <div 
+      <div
         className="bg-white shadow-md fixed top-0 left-0 right-0 z-50 transition-opacity duration-300"
         style={{ opacity: scrollOpacity }}
       >
@@ -113,8 +116,8 @@ export function Header() {
 
             {/* Right Side */}
             <div className="flex items-center gap-3 pr-10">
-              <button 
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors" 
+              <button
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                 onClick={() => setShowSearch(!showSearch)}
               >
                 <Search className="w-5 h-5" />
@@ -181,14 +184,16 @@ export function Header() {
                 </Link>
               )}
 
-              <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#ff5528] text-white hover:bg-[#e64a22] transition-colors">
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#ffb936] text-[#0d0d0d] text-xs font-bold rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </button>
+              <Link href="/cart">
+                <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-[#ff5528] text-white hover:bg-[#e64a22] transition-colors ">
+                  <ShoppingCart className="w-5 h-5" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#ffb936] text-[#0d0d0d] text-xs font-bold rounded-full flex items-center justify-center">
+                      {itemCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
 
               {/* Mobile Menu Toggle */}
               <button
@@ -201,23 +206,23 @@ export function Header() {
           </div>
         </div>
 
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="lg:hidden bg-white border-t">
-          <div className="container mx-auto px-4 py-4">
-            <nav className="flex flex-col gap-4">
-              <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Home</Link>
-              <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Food</Link>
-              <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Fresh</Link>
-              <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drink</Link>
-              <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Dessert</Link>
-              <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
-              <Link href="/about_us" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">About Us</Link>
-              <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
-            </nav>
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="lg:hidden bg-white border-t">
+            <div className="container mx-auto px-4 py-4">
+              <nav className="flex flex-col gap-4">
+                <Link href="/" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Home</Link>
+                <Link href="/food" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Food</Link>
+                <Link href="/fresh" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Fresh</Link>
+                <Link href="/drink" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Drink</Link>
+                <Link href="/dessert" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Dessert</Link>
+                <Link href="/blog" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Blog</Link>
+                <Link href="/about_us" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">About Us</Link>
+                <Link href="/contact" className="font-semibold text-[#0d0d0d] hover:text-[#ff5528] py-2">Contact</Link>
+              </nav>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </header>
   )

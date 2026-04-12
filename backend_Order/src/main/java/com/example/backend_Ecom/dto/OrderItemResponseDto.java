@@ -20,6 +20,8 @@ public class OrderItemResponseDto {
 
     private String productName;
 
+    private String imageUrl;
+
     private Long priceAtTime;
 
     private Integer quantity;

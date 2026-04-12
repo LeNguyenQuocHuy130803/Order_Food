@@ -4,9 +4,11 @@ import Link from "next/link"
 import { useState } from "react"
 import { ShoppingCart, Menu, X, Search, User } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
+import { useCartQuery } from "@/hooks/useCartQuery"
 
 export function ProductHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { itemCount } = useCartQuery()
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
@@ -59,9 +61,11 @@ export function ProductHeader() {
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff5528] text-xs text-white font-bold">
-                3
-              </span>
+              {itemCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ff5528] text-xs text-white font-bold">
+                  {itemCount}
+                </span>
+              )}
             </Button>
           </Link>
           <Button

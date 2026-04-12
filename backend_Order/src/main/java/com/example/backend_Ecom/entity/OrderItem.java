@@ -33,6 +33,9 @@ public class OrderItem {
     @Column(nullable = false)
     private String productName;
 
+    @Column(nullable = true)
+    private String imageUrl;
+
     @Column(nullable = false)
     private Long priceAtTime; // Price when order was placed
 

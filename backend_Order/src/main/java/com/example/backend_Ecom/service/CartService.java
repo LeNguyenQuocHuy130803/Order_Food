@@ -88,29 +88,29 @@ public class CartService {
     }
 
     /**
-     * Lấy chi tiết product (name + price) từ các repositories khác nhau
+     * Lấy chi tiết product (name + price + imageUrl) từ các repositories khác nhau
      */
     private ProductInfo getProductInfo(ProductType productType, Long productId) {
         switch (productType) {
             case FOOD:
                 Food food = foodRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food not found"));
-                return new ProductInfo(food.getName(), food.getPrice(), food.getQuantity());
+                return new ProductInfo(food.getName(), food.getPrice(), food.getQuantity(), food.getImageUrl());
 
             case DRINK:
                 Drink drink = drinkRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink not found"));
-                return new ProductInfo(drink.getName(), drink.getPrice(), drink.getQuantity());
+                return new ProductInfo(drink.getName(), drink.getPrice(), drink.getQuantity(), drink.getImageUrl());
 
             case DESSERT:
                 Dessert dessert = dessertRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert not found"));
-                return new ProductInfo(dessert.getName(), dessert.getPrice(), dessert.getQuantity());
+                return new ProductInfo(dessert.getName(), dessert.getPrice(), dessert.getQuantity(), dessert.getImageUrl());
 
             case FRESH:
                 Fresh fresh = freshRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
-                return new ProductInfo(fresh.getName(), fresh.getPrice(), fresh.getQuantity());
+                return new ProductInfo(fresh.getName(), fresh.getPrice(), fresh.getQuantity(), fresh.getImageUrl());
 
             default:
                 throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type");
@@ -168,6 +168,7 @@ public class CartService {
                     .productType(request.getProductType())
                     .productId(request.getProductId())
                     .productName(productInfo.getName())
+                    .imageUrl(productInfo.getImageUrl())
                     .priceAtTime(productInfo.getPrice())
                     .quantity(request.getQuantity())
                     .build();
@@ -287,6 +288,7 @@ public class CartService {
                 .productType(item.getProductType())
                 .productId(item.getProductId())
                 .productName(item.getProductName())
+                .imageUrl(item.getImageUrl())
                 .priceAtTime(item.getPriceAtTime())
                 .quantity(item.getQuantity())
                 .createdAt(item.getCreatedAt())
@@ -295,17 +297,19 @@ public class CartService {
     }
 
     /**
-     * Helper class to store product info
+     * Helper class to store product info (name, price, quantity, imageUrl)
      */
     private static class ProductInfo {
         private final String name;
         private final Long price;
         private final Integer quantity;
+        private final String imageUrl;
 
-        public ProductInfo(String name, Long price, Integer quantity) {
+        public ProductInfo(String name, Long price, Integer quantity, String imageUrl) {
             this.name = name;
             this.price = price;
             this.quantity = quantity;
+            this.imageUrl = imageUrl;
         }
 
         public String getName() {
@@ -318,6 +322,10 @@ public class CartService {
 
         public Integer getQuantity() {
             return quantity;
+        }
+
+        public String getImageUrl() {
+            return imageUrl;
         }
     }
 }

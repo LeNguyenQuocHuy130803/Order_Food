@@ -57,3 +57,9 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 -- Create indexes for better query performance
 -- All indexes are now created directly in CREATE TABLE statements above
+
+-- Add image_url column to cart_items (for product identification)
+ALTER TABLE cart_items ADD COLUMN image_url VARCHAR(500) DEFAULT NULL;
+
+-- Add image_url column to order_items (for consistency with cart)
+ALTER TABLE order_items ADD COLUMN image_url VARCHAR(500) DEFAULT NULL;

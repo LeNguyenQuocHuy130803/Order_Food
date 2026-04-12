@@ -9,14 +9,12 @@ import type { Food } from "@/types/food";
 import { FoodService } from "@/service/FoodService";
 import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
-import { Footer } from "@/app/components/layout/footer";
-
+import { Footer } from "@/app/components/layout/footer";import { useCartQuery } from "@/hooks/useCartQuery"
 
 export default function FoodDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const foodId = params.id as string;
-
+  const foodId = params.id as string;  const { refetch: refetchCart } = useCartQuery()
   const [food, setFood] = useState<Food | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +44,8 @@ export default function FoodDetailPage() {
 
       console.log(`✅ [FoodDetailPage] Added to cart success:`, cartData);
       setCartSuccess(true);
-
+      // 🔄 Refetch cart count ở header
+      await refetchCart()
       // Reset quantity
       setQuantity(1);
 
@@ -54,7 +53,7 @@ export default function FoodDetailPage() {
       setTimeout(() => setCartSuccess(false), 2000);
     } catch (err: any) {
       const errorMsg = err.message || "Failed to add to cart";
-      console.error(`❌ [FoodDetailPage] Error:`, errorMsg);
+      console.log(`⚠️ [FoodDetailPage] Error:`, errorMsg);
       setCartError(errorMsg);
 
       // Ẩn error message sau 3 giây

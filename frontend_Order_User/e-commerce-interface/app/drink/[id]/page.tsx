@@ -7,20 +7,65 @@ import { Heart, ArrowLeft, ShoppingCart } from "lucide-react";
 
 import type { Drink } from "@/types/drink";
 import { DrinkService } from "@/service/DrinkService";
+import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
+import { useCartQuery } from "@/hooks/useCartQuery";
 
 
 export default function DrinkDetailPage() {
   const params = useParams();
   const router = useRouter();
   const drinkId = params.id as string;
+  const { refetch: refetchCart } = useCartQuery();
 
   const [drink, setDrink] = useState<Drink | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [cartSuccess, setCartSuccess] = useState(false);
+  const [cartError, setCartError] = useState<string | null>(null);
+
+  // 🛒 Xử lý thêm sản phẩm vào giỏ hàng
+  const handleAddToCart = async () => {
+    try {
+      setIsAddingToCart(true);
+      setCartError(null);
+      setCartSuccess(false);
+
+      if (!drink) return;
+
+      console.log(`🛒 [DrinkDetailPage] Adding to cart:`, {
+        productType: "DRINK",
+        productId: drink.id,
+        quantity,
+      });
+
+      // ✅ Gọi CartService để thêm vào giỏ hàng
+      const cartData = await CartService.addProductToCart("DRINK", drink.id, quantity);
+
+      console.log(`✅ [DrinkDetailPage] Added to cart success:`, cartData);
+      setCartSuccess(true);
+      // 🔄 Refetch cart count ở header
+      await refetchCart();
+      // Reset quantity
+      setQuantity(1);
+
+      // Ẩn success message sau 2 giây
+      setTimeout(() => setCartSuccess(false), 2000);
+    } catch (err: any) {
+      const errorMsg = err.message || "Failed to add to cart";
+      console.log(`⚠️ [DrinkDetailPage] Error:`, errorMsg);
+      setCartError(errorMsg);
+
+      // Ẩn error message sau 3 giây
+      setTimeout(() => setCartError(null), 3000);
+    } finally {
+      setIsAddingToCart(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDrinkDetail = async () => {
@@ -236,19 +281,44 @@ export default function DrinkDetailPage() {
 
             {/* Order Button */}
             <button
-              disabled={drink.quantity === 0}
+              onClick={handleAddToCart}
+              disabled={drink.quantity === 0 || isAddingToCart}
               className={`w-full py-4 px-6 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition-all duration-200 ${
-                drink.quantity === 0
+                drink.quantity === 0 || isAddingToCart
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : "bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl active:scale-95"
               }`}
             >
               <ShoppingCart size={24} />
-              <span>Order Now ({quantity} items)</span>
+              <span>
+                {isAddingToCart ? "Adding..." : `Order Now (${quantity} items)`}
+              </span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Success Modal */}
+      {cartSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm text-center shadow-lg">
+            <div className="text-green-500 text-5xl mb-4">✅</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Success!</h3>
+            <p className="text-gray-600">Added to cart successfully</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error Modal */}
+      {cartError && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg p-8 max-w-sm text-center shadow-lg">
+            <div className="text-red-500 text-5xl mb-4">❌</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Error</h3>
+            <p className="text-gray-600">{cartError}</p>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </main>

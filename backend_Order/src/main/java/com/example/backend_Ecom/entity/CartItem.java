@@ -33,6 +33,9 @@ public class CartItem {
     @Column(nullable = false)
     private String productName;
 
+    @Column(nullable = true)
+    private String imageUrl; // Product image URL from Cloudinary or similar
+
     @Column(nullable = false)
     private Long priceAtTime; // Price when added to cart
 
