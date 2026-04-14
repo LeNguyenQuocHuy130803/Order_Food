@@ -89,7 +89,7 @@ public class BlogController {
      * Frontend: Update bài viết với file upload lựa chọn
      */
     @Operation(summary = "Update blog post")
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<BlogResponseDto> updateBlog(
             @Parameter(description = "Blog post ID") @PathVariable @Min(1) Long id,
             @Valid @ModelAttribute BlogRequestDto request) {

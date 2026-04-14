@@ -8,7 +8,9 @@ public enum DessertCategory {
     TART("Tart", "Bánh tart"),
     BROWNIE("Brownie", "Bánh brownie"),
     MOUSSE("Mousse", "Mousse"),
-    DONUT("Donut", "Bánh donut");
+    DONUT("Donut", "Bánh donut"),
+    CHEESECAKE("cheesecake", "bánh phô mai"),
+    PIECE("piece", "bánh piece");
 
     private final String englishName;
     private final String vietnameseName;

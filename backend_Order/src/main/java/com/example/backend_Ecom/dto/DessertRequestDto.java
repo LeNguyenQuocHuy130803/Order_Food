@@ -17,7 +17,7 @@ import jakarta.validation.constraints.NotBlank;
 public class DessertRequestDto {
 
     @Schema(description = "Dessert name", example = "Chocolate Cake")
-    @NotBlank(message = "Dessert name cannot be blank")
+    // @NotBlank(message = "Dessert name cannot be blank")
     private String name;
 
     @Schema(description = "Dessert description", example = "Rich chocolate cake with cream topping")

@@ -17,11 +17,11 @@ const DEFAULT_PAGE_SIZE = 9
 const DESSERT_CATEGORIES = [
   { name: 'CAKE', displayName: 'Cake' },
   { name: 'COOKIE', displayName: 'Cookie' },
-  { name: 'PASTRY', displayName: 'Pastry' },
+  { name: 'CHEESECAKE', displayName: 'Cheesecake' },
+  { name: 'DONUT', displayName: 'Donut' },
   { name: 'BROWNIE', displayName: 'Brownie' },
-  { name: 'TIRAMISU', displayName: 'Tiramisu' },
   { name: 'MOUSSE', displayName: 'Mousse' },
-  { name: 'ICE_CREAM', displayName: 'Ice Cream' },
+  { name: 'TART', displayName: 'Tart' },
   { name: 'PUDDING', displayName: 'Pudding' },
 ]
 

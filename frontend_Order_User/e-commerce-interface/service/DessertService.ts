@@ -146,7 +146,7 @@ export const filterDesserts = async (
       params.append('region', filters.region)
     }
 
-    const res = await fetch(`${API_URL}/foods/filter?${params.toString()}`, {
+    const res = await fetch(`${API_URL}/desserts/filter?${params.toString()}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
