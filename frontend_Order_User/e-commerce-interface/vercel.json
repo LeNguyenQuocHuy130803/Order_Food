@@ -1,0 +1,11 @@
+{
+  "env": {
+    "VITE_ESLINT_DISABLED": "true"
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
