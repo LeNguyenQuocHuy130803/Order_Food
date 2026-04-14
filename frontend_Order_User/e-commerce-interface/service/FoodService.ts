@@ -24,7 +24,7 @@ export const getAllFoodsPaginated = async (
       size: pageSize.toString(),
     });
 
-    const res = await fetch(`${API_URL}/foods/paging?${params}`, {
+    const res = await fetch(`${API_URL}/foods/paging?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       // 🔒 Không gửi cookies - API public
@@ -92,7 +92,7 @@ export const searchFoods = async (
     if (category) params.append("category", category);
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/foods/search?${params}`, {
+    const res = await fetch(`${API_URL}/foods/search?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -141,7 +141,7 @@ export const filterFoods = async (
     if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/foods/filter?${params}`, {
+    const res = await fetch(`${API_URL}/foods/filter?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

@@ -24,7 +24,7 @@ export const getAllFreshPaginated = async (
       size: pageSize.toString(),
     });
 
-    const res = await fetch(`${API_URL}/freshs/paging?${params}`, {
+    const res = await fetch(`${API_URL}/freshs/paging?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -90,7 +90,7 @@ export const searchFresh = async (
     if (category) params.append("category", category);
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/freshs/search?${params}`, {
+    const res = await fetch(`${API_URL}/freshs/search?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -139,7 +139,7 @@ export const filterFresh = async (
     if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/freshs/filter?${params}`, {
+    const res = await fetch(`${API_URL}/freshs/filter?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -154,29 +154,6 @@ export const filterFresh = async (
     return data;
   } catch (error: any) {
     console.error("❌ Error in filterFresh:", error.message);
-    throw error;
-  }
-};
-  try {
-    const params: Record<string, any> = {};
-
-    if (categories && categories.length > 0) {
-      params.categories = categories;
-    }
-    if (featured !== undefined) {
-      params.featured = featured;
-    }
-    if (unit) params.unit = unit;
-    if (minPrice !== undefined) params.minPrice = minPrice;
-    if (maxPrice !== undefined) params.maxPrice = maxPrice;
-    if (region) params.region = region;
-
-    const res = await axios.get<Fresh[]>(`${API_URL}/freshs/filter`, {
-      params,
-    });
-    return res.data;
-  } catch (error) {
-    console.error("Error in filterFresh:", error);
     throw error;
   }
 };

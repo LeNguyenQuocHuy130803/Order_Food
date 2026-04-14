@@ -11,7 +11,7 @@ import { CartData } from "@/types/cart"
  * ✅ Chỉ fetch khi user đã authenticated
  * ✅ Không refetch khi focus window
  */
-export function useCartQuery(isAuthenticated: boolean = true) {
+export function useCartQuery(isAuthenticated: boolean = false) {
   const { data, isLoading, error, refetch, isRefetching } = useQuery<CartData>({
     queryKey: ["cart"],
     queryFn: async () => {

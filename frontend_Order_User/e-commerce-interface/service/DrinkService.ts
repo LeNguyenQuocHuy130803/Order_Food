@@ -24,7 +24,7 @@ export const getAllDrinksPaginated = async (
       size: pageSize.toString(),
     });
 
-    const res = await fetch(`${API_URL}/drinks/paging?${params}`, {
+    const res = await fetch(`${API_URL}/drinks/paging?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -90,7 +90,7 @@ export const searchDrinks = async (
     if (category) params.append("category", category);
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/drinks/search?${params}`, {
+    const res = await fetch(`${API_URL}/drinks/search?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -139,7 +139,7 @@ export const filterDrinks = async (
     if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
     if (region) params.append("region", region);
 
-    const res = await fetch(`${API_URL}/drinks/filter?${params}`, {
+    const res = await fetch(`${API_URL}/drinks/filter?${params.toString()}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -154,29 +154,6 @@ export const filterDrinks = async (
     return data;
   } catch (error: any) {
     console.error("❌ Error in filterDrinks:", error.message);
-    throw error;
-  }
-};
-  try {
-    const params: Record<string, any> = {};
-
-    if (categories && categories.length > 0) {
-      params.categories = categories;
-    }
-    if (featured !== undefined) {
-      params.featured = featured;
-    }
-    if (unit) params.unit = unit;
-    if (minPrice !== undefined) params.minPrice = minPrice;
-    if (maxPrice !== undefined) params.maxPrice = maxPrice;
-    if (region) params.region = region;
-
-    const res = await axios.get<Drink[]>(`${API_URL}/drinks/filter`, {
-      params,
-    });
-    return res.data;
-  } catch (error) {
-    console.error("Error in filterDrinks:", error);
     throw error;
   }
 };

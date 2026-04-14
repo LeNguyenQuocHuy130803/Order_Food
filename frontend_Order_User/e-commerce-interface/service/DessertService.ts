@@ -23,7 +23,7 @@ export const getAllDessertsPaginated = async (
       pageSize: pageSize.toString(),
     })
 
-    const res = await fetch(`${API_URL}/desserts/paging?${params}`, {
+    const res = await fetch(`${API_URL}/desserts/paging?${params.toString()}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
@@ -96,7 +96,7 @@ export const searchDesserts = async (
       searchTerm: query,
     })
 
-    const res = await fetch(`${API_URL}/foods/search?${params}`, {
+    const res = await fetch(`${API_URL}/foods/search?${params.toString()}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     })
