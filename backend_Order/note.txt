@@ -1,0 +1,3 @@
+để cấu hình token : ví dụ get thông tin thì cần token thì ở hết file securityConfig 
+
+và trong các controller gọi đến ;     @PreAuthorize("isAuthenticated()") + import org.springframework.security.access.prepost.PreAuthorize;
