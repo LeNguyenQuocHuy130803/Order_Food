@@ -8,14 +8,15 @@ const USER_QUERY_KEY = ['user'] as const
  * Hook để fetch user detail
  * - Auto caching: 5 phút
  * - Auto garbage collection: 10 phút
+ * - Chỉ fetch khi user đã authenticated
  */
-export const useUserDetail = (userId: number) => {
+export const useUserDetail = (userId: number, isAuthenticated: boolean = true) => {
   return useQuery({
     queryKey: [...USER_QUERY_KEY, userId],
     queryFn: () => userService.getUserById(userId),
     staleTime: 5 * 60 * 1000, // 5 phút
     gcTime: 10 * 60 * 1000, // 10 phút (cũ là cacheTime)
-    enabled: !!userId, // Chỉ fetch khi có userId
+    enabled: !!userId && isAuthenticated, // Chỉ fetch khi có userId và user authenticated
   })
 }
 

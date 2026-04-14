@@ -1,14 +1,15 @@
-import apiClient from '@/lib/apiClient'
 import type { Dessert, DessertFilterParams, PaginatedDessertResponse } from '@/types/dessert'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 
 /**
  * DessertService - Fetch dessert data from API
- * Dùng apiClient (axios) với auto-refresh token interceptor
+ * Dùng Fetch API - không cần auth token
+ * 🔒 API sản phẩm công khai - không cần authentication
  */
 
 /**
  * Get all desserts with pagination
- * NOTE: Using /foods endpoint temporarily until /desserts backend endpoint is ready
  */
 export const getAllDessertsPaginated = async (
   page: number = 1,
@@ -17,41 +18,61 @@ export const getAllDessertsPaginated = async (
   try {
     console.log(`🔍 [DessertService] Fetching desserts: page ${page}, pageSize ${pageSize}`)
 
-    const res = await apiClient.get<PaginatedDessertResponse>(
-      `/desserts/paging?pageNumber=${page}&pageSize=${pageSize}`
-    )
-
-    console.log(`✅ [DessertService] Desserts fetched:`, {
-      total: res.data.totalRecords,
-      page: res.data.pageNumber,
-      pageSize: res.data.pageSize,
-      totalPages: res.data.totalPages,
+    const params = new URLSearchParams({
+      pageNumber: page.toString(),
+      pageSize: pageSize.toString(),
     })
 
-    return res.data
-  } catch (error) {
-    console.error('❌ [DessertService] Error in getAllDessertsPaginated:', error)
+    const res = await fetch(`${API_URL}/desserts/paging?${params}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || 'Failed to fetch desserts')
+    }
+
+    const data = await res.json()
+    console.log(`✅ [DessertService] Desserts fetched:`, {
+      total: data.totalRecords,
+      page: data.pageNumber,
+      pageSize: data.pageSize,
+      totalPages: data.totalPages,
+    })
+
+    return data
+  } catch (error: any) {
+    console.error('❌ [DessertService] Error in getAllDessertsPaginated:', error.message)
     throw error
   }
 }
 
 /**
  * Get dessert by ID
- * NOTE: Using /foods endpoint temporarily until /desserts backend endpoint is ready
  */
 export const getDessertById = async (dessertId: number): Promise<Dessert> => {
   try {
     console.log(`🔍 [DessertService] Fetching dessert ID: ${dessertId}`)
 
-    const res = await apiClient.get<Dessert>(`/desserts/${dessertId}`)
-
-    console.log(`✅ [DessertService] Dessert fetched:`, {
-      id: res.data.id,
-      name: res.data.name,
-      price: res.data.price,
+    const res = await fetch(`${API_URL}/desserts/${dessertId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     })
 
-    return res.data
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || 'Failed to fetch dessert')
+    }
+
+    const data = await res.json()
+    console.log(`✅ [DessertService] Dessert fetched:`, {
+      id: data.id,
+      name: data.name,
+      price: data.price,
+    })
+
+    return data
   } catch (error) {
     console.error('❌ [DessertService] Error in getDessertById:', error)
     throw error
@@ -60,7 +81,6 @@ export const getDessertById = async (dessertId: number): Promise<Dessert> => {
 
 /**
  * Search desserts by name/description
- * NOTE: Using /foods endpoint temporarily until /desserts backend endpoint is ready
  */
 export const searchDesserts = async (
   query: string,
@@ -70,22 +90,34 @@ export const searchDesserts = async (
   try {
     console.log(`🔍 [DessertService] Searching desserts: "${query}"`)
 
-    const res = await apiClient.get<PaginatedDessertResponse>(
-      `/foods/search?pageNumber=${page}&pageSize=${pageSize}&searchTerm=${query}`
-    )
+    const params = new URLSearchParams({
+      pageNumber: page.toString(),
+      pageSize: pageSize.toString(),
+      searchTerm: query,
+    })
 
-    console.log(`✅ [DessertService] Search complete:`, res.data.totalRecords)
+    const res = await fetch(`${API_URL}/foods/search?${params}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
 
-    return res.data
-  } catch (error) {
-    console.error('❌ [DessertService] Error in searchDesserts:', error)
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || 'Failed to search desserts')
+    }
+
+    const data = await res.json()
+    console.log(`✅ [DessertService] Search complete:`, data.totalRecords)
+
+    return data
+  } catch (error: any) {
+    console.error('❌ [DessertService] Error in searchDesserts:', error.message)
     throw error
   }
 }
 
 /**
  * Filter desserts by criteria
- * NOTE: Using /foods endpoint temporarily until /desserts backend endpoint is ready
  */
 export const filterDesserts = async (
   filters: DessertFilterParams
@@ -114,15 +146,22 @@ export const filterDesserts = async (
       params.append('region', filters.region)
     }
 
-    const res = await apiClient.get<PaginatedDessertResponse>(
-      `/foods/filter?${params.toString()}`
-    )
+    const res = await fetch(`${API_URL}/foods/filter?${params.toString()}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    })
 
-    console.log(`✅ [DessertService] Filter complete:`, res.data.totalRecords)
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }))
+      throw new Error(error.message || 'Failed to filter desserts')
+    }
 
-    return res.data
-  } catch (error) {
-    console.error('❌ [DessertService] Error in filterDesserts:', error)
+    const data = await res.json()
+    console.log(`✅ [DessertService] Filter complete:`, data.totalRecords)
+
+    return data
+  } catch (error: any) {
+    console.error('❌ [DessertService] Error in filterDesserts:', error.message)
     throw error
   }
 }

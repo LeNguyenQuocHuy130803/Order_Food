@@ -1,11 +1,11 @@
-import axios from "axios";
 import type { Fresh, PaginatedFreshResponse } from "@/types/fresh";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
  * FreshService - Tách logic API khỏi UI
- * Dùng Axios + async/await
+ * Dùng Fetch API + async/await (không cần auth token)
+ * 🔒 API sản phẩm công khai - không cần authentication
  */
 
 /**
@@ -19,18 +19,26 @@ export const getAllFreshPaginated = async (
   pageSize: number = 9
 ): Promise<PaginatedFreshResponse> => {
   try {
-    const res = await axios.get<PaginatedFreshResponse>(
-      `${API_URL}/freshs/paging`,
-      {
-        params: {
-          page,
-          size: pageSize,
-        },
-      }
-    );
-    return res.data;
-  } catch (error) {
-    console.error("Error in getAllFreshPaginated:", error);
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: pageSize.toString(),
+    });
+
+    const res = await fetch(`${API_URL}/freshs/paging?${params}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to fetch fresh products");
+    }
+
+    const data = await res.json();
+    console.log("✅ getAllFreshPaginated response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in getAllFreshPaginated:", error.message);
     throw error;
   }
 };
@@ -42,10 +50,21 @@ export const getAllFreshPaginated = async (
  */
 export const getFreshById = async (id: number): Promise<Fresh> => {
   try {
-    const res = await axios.get<Fresh>(`${API_URL}/freshs/${id}`);
-    return res.data;
-  } catch (error) {
-    console.error("Error in getFreshById:", error);
+    const res = await fetch(`${API_URL}/freshs/${id}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to fetch fresh product");
+    }
+
+    const data = await res.json();
+    console.log("✅ getFreshById response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in getFreshById:", error.message);
     throw error;
   }
 };
@@ -65,17 +84,27 @@ export const searchFresh = async (
   region?: string
 ): Promise<Fresh[]> => {
   try {
-    const res = await axios.get<Fresh[]>(`${API_URL}/freshs/search`, {
-      params: {
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(category && { category }),
-        ...(region && { region }),
-      },
+    const params = new URLSearchParams();
+    if (name) params.append("name", name);
+    if (description) params.append("description", description);
+    if (category) params.append("category", category);
+    if (region) params.append("region", region);
+
+    const res = await fetch(`${API_URL}/freshs/search?${params}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    return res.data;
-  } catch (error) {
-    console.error("Error in searchFresh:", error);
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to search fresh products");
+    }
+
+    const data = await res.json();
+    console.log("✅ searchFresh response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in searchFresh:", error.message);
     throw error;
   }
 };
@@ -98,6 +127,36 @@ export const filterFresh = async (
   maxPrice?: number,
   region?: string
 ): Promise<Fresh[]> => {
+  try {
+    const params = new URLSearchParams();
+
+    if (categories && categories.length > 0) {
+      categories.forEach(cat => params.append("categories", cat));
+    }
+    if (featured !== undefined) params.append("featured", featured.toString());
+    if (unit) params.append("unit", unit);
+    if (minPrice !== undefined) params.append("minPrice", minPrice.toString());
+    if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
+    if (region) params.append("region", region);
+
+    const res = await fetch(`${API_URL}/freshs/filter?${params}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to filter fresh products");
+    }
+
+    const data = await res.json();
+    console.log("✅ filterFresh response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in filterFresh:", error.message);
+    throw error;
+  }
+};
   try {
     const params: Record<string, any> = {};
 
