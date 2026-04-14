@@ -18,11 +18,12 @@ export function Header() {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [avatarRefresh, setAvatarRefresh] = useState(0)
 
-  // ✅ Fetch updated user profile from React Query
-  const { data: profile } = useUserDetail(user?.id ?? 0)
+  // ✅ Fetch updated user profile from React Query (chỉ khi authenticated)
+  const { data: profile } = useUserDetail(user?.id ?? 0, isAuthenticated)
 
-  // ✅ Fetch cart count từ API (với auto-refresh token)
-  const { itemCount, refetch: refetchCart } = useCartQuery()
+  // ✅ Fetch cart count từ API (chỉ khi authenticated)
+  // ⚠️ Nếu chưa login, sẽ không fetch để tránh 401 error
+  const { itemCount, refetch: refetchCart } = useCartQuery(isAuthenticated)
 
   useEffect(() => {
     const handleScroll = () => {

@@ -38,10 +38,10 @@ export function useDessertQuery(
   })
 
   return {
-    desserts: data?.data || [],
+    desserts: Array.isArray(data) ? data : data?.data || [],
     loading: isLoading,
     error: error?.message || null,
-    totalPages: data?.totalPages || 1,
+    totalPages: Array.isArray(data) ? 1 : data?.totalPages || 1,
     isRefetching,
   }
 }

@@ -34,6 +34,4 @@ public class BlogRequestDto {
     // Or use avatar URL directly
     private String avatarUrl;
 
-    @Builder.Default
-    private Integer commentCount = 0;
 }

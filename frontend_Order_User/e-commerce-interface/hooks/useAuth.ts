@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { authService } from '@/service/authService'
 import type { AuthUser } from '@/types/user'
 
@@ -16,6 +17,7 @@ export function useAuth(): Auth {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     // ✅ Lấy user từ localStorage khi component mount
@@ -32,6 +34,12 @@ export function useAuth(): Auth {
   }, [])   // Chỉ chạy 1 lần khi component mount ( tức là componen nào dùng nó thì nó sẽ chạy 1 lần khi component đó mount)
 
   const logout = async () => {
+    
+    // 🗑️ Clear all React Query cache khi logout
+    // Giúp tránh những request cũ bị gửi sau logout
+    console.log('🗑️ [useAuth] Clearing React Query cache...')
+    queryClient.clear()
+    
     console.log('🚪 [useAuth] Logging out...')
     await authService.logout()
     setUser(null)

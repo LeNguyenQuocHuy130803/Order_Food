@@ -1,11 +1,11 @@
-import axios from "axios";
 import type { Food, PaginatedFoodResponse } from "@/types/food";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
 
 /**
  * FoodService - Tách logic API khỏi UI
- * Dùng Axios + async/await
+ * Dùng Fetch API + async/await (không cần auth token)
+ * 🔒 API sản phẩm công khai - không cần authentication
  */
 
 /**
@@ -19,19 +19,27 @@ export const getAllFoodsPaginated = async (
   pageSize: number = 9
 ): Promise<PaginatedFoodResponse> => {
   try {
-    const res = await axios.get<PaginatedFoodResponse>(
-      `${API_URL}/foods/paging`,
-      {
-        params: {
-          page,
-          size: pageSize,
-        },
-      }
-    );
-    console.log("getAllFoodsPaginated response:", res.data);
-    return res.data;
-  } catch (error) {
-    console.error("Error in getAllFoodsPaginated:", error);
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: pageSize.toString(),
+    });
+
+    const res = await fetch(`${API_URL}/foods/paging?${params.toString()}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // 🔒 Không gửi cookies - API public
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to fetch foods");
+    }
+
+    const data = await res.json();
+    console.log("✅ getAllFoodsPaginated response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in getAllFoodsPaginated:", error.message);
     throw error;
   }
 };
@@ -43,15 +51,24 @@ export const getAllFoodsPaginated = async (
  */
 export const getFoodById = async (id: number): Promise<Food> => {
   try {
-    const res = await axios.get<Food>(`${API_URL}/foods/${id}`);
-    console.log("getFoodById response nef huy:", res.data);
-    return res.data;
-    
-  } catch (error) {
-    console.error("Error in getFoodById:", error);
+    const res = await fetch(`${API_URL}/foods/${id}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // 🔒 Không gửi cookies - API public
+    });
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to fetch food");
+    }
+
+    const data = await res.json();
+    console.log("✅ getFoodById response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in getFoodById:", error.message);
     throw error;
   }
-
 };
 
 /**
@@ -69,18 +86,27 @@ export const searchFoods = async (
   region?: string
 ): Promise<Food[]> => {
   try {
-    const res = await axios.get<Food[]>(`${API_URL}/foods/search`, {
-      params: {
-        ...(name && { name }),
-        ...(description && { description }),
-        ...(category && { category }),
-        ...(region && { region }),
-      },
+    const params = new URLSearchParams();
+    if (name) params.append("name", name);
+    if (description) params.append("description", description);
+    if (category) params.append("category", category);
+    if (region) params.append("region", region);
+
+    const res = await fetch(`${API_URL}/foods/search?${params.toString()}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    console.log("searchFoods response:", res.data);
-    return res.data;
-  } catch (error) {
-    console.error("Error in searchFoods:", error);
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to search foods");
+    }
+
+    const data = await res.json();
+    console.log("✅ searchFoods response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in searchFoods:", error.message);
     throw error;
   }
 };
@@ -104,26 +130,32 @@ export const filterFoods = async (
   region?: string
 ): Promise<Food[]> => {
   try {
-    const params: Record<string, any> = {};
+    const params = new URLSearchParams();
 
     if (categories && categories.length > 0) {
-      params.categories = categories;
+      categories.forEach(cat => params.append("categories", cat));
     }
-    if (featured !== undefined) {
-      params.featured = featured;
-    }
-    if (unit) params.unit = unit;
-    if (minPrice !== undefined) params.minPrice = minPrice;
-    if (maxPrice !== undefined) params.maxPrice = maxPrice;
-    if (region) params.region = region;
+    if (featured !== undefined) params.append("featured", featured.toString());
+    if (unit) params.append("unit", unit);
+    if (minPrice !== undefined) params.append("minPrice", minPrice.toString());
+    if (maxPrice !== undefined) params.append("maxPrice", maxPrice.toString());
+    if (region) params.append("region", region);
 
-    const res = await axios.get<Food[]>(`${API_URL}/foods/filter`, {
-      params,
+    const res = await fetch(`${API_URL}/foods/filter?${params.toString()}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
     });
-    console.log("filterFoods response:", res.data);
-    return res.data;
-  } catch (error) {
-    console.error("Error in filterFoods:", error);
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(error.message || "Failed to filter foods");
+    }
+
+    const data = await res.json();
+    console.log("✅ filterFoods response:", data);
+    return data;
+  } catch (error: any) {
+    console.error("❌ Error in filterFoods:", error.message);
     throw error;
   }
 };

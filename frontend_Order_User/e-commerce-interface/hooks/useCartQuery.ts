@@ -8,9 +8,10 @@ import { CartData } from "@/types/cart"
  * 🛒 React Query Hook - Lấy giỏ hàng của user
  * ✅ Auto-refresh token khi hết hạn
  * ✅ Cache data 5 phút
+ * ✅ Chỉ fetch khi user đã authenticated
  * ✅ Không refetch khi focus window
  */
-export function useCartQuery() {
+export function useCartQuery(isAuthenticated: boolean = false) {
   const { data, isLoading, error, refetch, isRefetching } = useQuery<CartData>({
     queryKey: ["cart"],
     queryFn: async () => {
@@ -27,6 +28,9 @@ export function useCartQuery() {
 
       return cartData
     },
+    // 🔒 Chỉ enable query khi user đã authenticated
+    // Nếu chưa login: query sẽ bị disable → không fetch → tránh 401 error
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5, // Cache 5 phút
     refetchOnWindowFocus: false,
   })
