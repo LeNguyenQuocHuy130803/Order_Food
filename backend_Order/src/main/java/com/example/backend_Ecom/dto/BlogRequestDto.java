@@ -16,8 +16,11 @@ public class BlogRequestDto {
     @NotBlank(message = "Title cannot be empty")
     private String title;
 
-    @NotBlank(message = "Description cannot be empty")
-    private String description;
+    @NotBlank(message = "Summary cannot be empty")
+    private String summary;  // Short description for list page
+
+    @NotBlank(message = "Content cannot be empty")
+    private String content;  // Full HTML content for detail page
 
     @NotBlank(message = "Author cannot be empty")
     private String author;

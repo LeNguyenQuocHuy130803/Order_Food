@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.dao.DataAccessException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,27 +38,8 @@ public class BlogService {
      * @return BlogResponseDto with created blog post
      */
     public BlogResponseDto createBlog(BlogRequestDto request) {
-        log.info("Creating new blog post: {}", request.getTitle());
-
-        // Validate input
-        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Blog title cannot be empty");
-        }
-        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Blog description cannot be empty");
-        }
-        if (request.getAuthor() == null || request.getAuthor().trim().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Author cannot be empty");
-        }
-        if (request.getCategory() == null || request.getCategory().trim().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Category cannot be empty");
-        }
-
-        // Check if title already exists
-        if (blogRepository.existsByTitle(request.getTitle())) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Blog title already exists");
-        }
-
+        // Validation done at Controller level using @Valid annotation on DTO
+        
         String uploadedImageUrl = null;
         try {
             // Handle image upload
@@ -70,27 +52,27 @@ public class BlogService {
             // Create blog post
             Blog blog = Blog.builder()
                     .title(request.getTitle())
-                    .description(request.getDescription())
+                    .summary(request.getSummary())
+                    .content(request.getContent())
                     .author(request.getAuthor())
                     .category(request.getCategory())
                     .avatar(uploadedImageUrl)
-                    .commentCount(request.getCommentCount() != null ? request.getCommentCount() : 0)
                     .build();
 
             blog = blogRepository.save(blog);
-            log.info("✓ Blog created successfully: {} (ID: {})", request.getTitle(), blog.getId());
 
             return mapToDto(blog);
 
-        } catch (Exception e) {
-            // COMPENSATING TRANSACTION: Delete orphaned image if DB save fails
+        } catch (RuntimeException e) {
+            // COMPENSATING TRANSACTION: Delete orphaned image if DB save or file upload fails
             if (uploadedImageUrl != null && request.getAvatar() != null && !request.getAvatar().isEmpty()) {
                 try {
                     fileUploadService.deleteImage(uploadedImageUrl);
-                } catch (Exception ex) {
-                    log.error("Failed to delete orphaned image: {}", uploadedImageUrl);
+                } catch (RuntimeException ex) {
+                    log.error("⚠️ Failed to delete orphaned image: {}", uploadedImageUrl, ex);
                 }
             }
+            log.error("Failed to create blog", e);
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to create blog: " + e.getMessage());
         }
     }
@@ -129,16 +111,11 @@ public class BlogService {
             }
 
             // Update fields
-            if (request.getTitle() != null && !request.getTitle().trim().isEmpty())
-                blog.setTitle(request.getTitle());
-            if (request.getDescription() != null && !request.getDescription().trim().isEmpty())
-                blog.setDescription(request.getDescription());
-            if (request.getAuthor() != null && !request.getAuthor().trim().isEmpty())
-                blog.setAuthor(request.getAuthor());
-            if (request.getCategory() != null && !request.getCategory().trim().isEmpty())
-                blog.setCategory(request.getCategory());
-            if (request.getCommentCount() != null)
-                blog.setCommentCount(request.getCommentCount());
+            blog.setTitle(request.getTitle());
+            blog.setSummary(request.getSummary());
+            blog.setContent(request.getContent());
+            blog.setAuthor(request.getAuthor());
+            blog.setCategory(request.getCategory());
 
             blog = blogRepository.save(blog);
 
@@ -146,23 +123,24 @@ public class BlogService {
             if (newlyUploadedUrl != null && oldImageUrl != null && !oldImageUrl.isEmpty()) {
                 try {
                     fileUploadService.deleteImage(oldImageUrl);
-                } catch (Exception ex) {
-                    log.warn("⚠️ Failed to delete old image: {}", oldImageUrl);
+                } catch (RuntimeException ex) {
+                    log.warn("⚠️ Failed to delete old image: {}", oldImageUrl, ex);
                 }
             }
 
             log.info("✓ Blog updated successfully: {}", id);
             return mapToDto(blog);
 
-        } catch (Exception e) {
-            // COMPENSATING TRANSACTION: Delete newly uploaded image if update fails
+        } catch (RuntimeException e) {
+            // COMPENSATING TRANSACTION: Delete newly uploaded image if update or file operation fails
             if (newlyUploadedUrl != null) {
                 try {
                     fileUploadService.deleteImage(newlyUploadedUrl);
-                } catch (Exception ex) {
-                    log.error("Failed to delete orphaned new image: {}", newlyUploadedUrl);
+                } catch (RuntimeException ex) {
+                    log.error("⚠️ Failed to delete orphaned new image during rollback: {}", newlyUploadedUrl, ex);
                 }
             }
+            log.error("Failed to update blog", e);
             throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR, "Failed to update blog: " + e.getMessage());
         }
     }
@@ -185,7 +163,7 @@ public class BlogService {
         if (blog.getAvatar() != null && !blog.getAvatar().isEmpty()) {
             try {
                 fileUploadService.deleteImage(blog.getAvatar());
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 log.warn("⚠️ Blog {} deleted but Cloudinary image deletion failed: {}", id, e.getMessage());
                 // Don't fail - DB deletion already succeeded
             }
@@ -265,11 +243,11 @@ public class BlogService {
         return BlogResponseDto.builder()
                 .id(blog.getId())
                 .title(blog.getTitle())
-                .description(blog.getDescription())
+                .summary(blog.getSummary())
+                .content(blog.getContent())
                 .avatar(blog.getAvatar())
                 .author(blog.getAuthor())
                 .category(blog.getCategory())
-                .commentCount(blog.getCommentCount())
                 .createdAt(blog.getCreatedAt())
                 .updatedAt(blog.getUpdatedAt())
                 .build();

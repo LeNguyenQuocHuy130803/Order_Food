@@ -15,7 +15,9 @@ public class BlogResponseDto {
 
     private String title;
 
-    private String description;
+    private String summary;  // Short description for list page
+
+    private String content;  // Full HTML content for detail page
 
     private String avatar;
 
@@ -23,7 +25,6 @@ public class BlogResponseDto {
 
     private String category;
 
-    private Integer commentCount;
 
     private LocalDateTime createdAt;
 

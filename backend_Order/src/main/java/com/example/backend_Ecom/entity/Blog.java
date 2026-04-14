@@ -22,7 +22,10 @@ public class Blog {
     private String title;
 
     @Column(columnDefinition = "TEXT", nullable = false)
-    private String description;
+    private String summary;  // Short description for list page
+
+    @Column(columnDefinition = "LONGTEXT", nullable = false)
+    private String content;  // Full HTML content for detail page
 
     @Column(name = "avatar_url")
     private String avatar;
@@ -33,9 +36,6 @@ public class Blog {
     @Column(nullable = false)
     private String category;  // Recipes, Tips, News, etc.
 
-    @Column(nullable = false)
-    @Builder.Default
-    private Integer commentCount = 0;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
