@@ -3,6 +3,7 @@ package com.example.backend_Ecom.dto;
 import com.example.backend_Ecom.enums.OrderStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,7 +18,7 @@ public class OrderResponseDto {
 
     private Long userId;
 
-    private Long totalPrice;
+    private BigDecimal totalPrice;
 
     private OrderStatus status;
 

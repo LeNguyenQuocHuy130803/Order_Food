@@ -39,8 +39,6 @@ public class DrinkController {
     public PaginatedDrinkResponseDto getAllDrinksPaginated(
             @Parameter(description = "Page number (1-based)", example = "1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "Number of items per page", example = "10") @RequestParam(defaultValue = "10") int size) {
-        System.out.println("page: " + page);
-        System.out.println("size: " + size);
         return drinkService.getAllDrinksPaginated(page, size);
     }
 

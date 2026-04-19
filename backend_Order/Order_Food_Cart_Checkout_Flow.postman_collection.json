@@ -1,0 +1,722 @@
+{
+  "info": {
+    "_postman_id": "cart-checkout-flow-collection",
+    "name": "Order Food - Cart & Checkout Flow",
+    "description": "Complete flow: Login -> Add to Cart -> Update Cart -> Checkout -> Order Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345"
+  },
+  "item": [
+    {
+      "name": "1. LOGIN & GET TOKEN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('token', jsonData.data.token);",
+              "    pm.environment.set('userId', jsonData.data.user.id);",
+              "    console.log('✓ Token saved:', jsonData.data.token.substring(0, 20) + '...');",
+              "    console.log('✓ User ID saved:', jsonData.data.user.id);",
+              "} else {",
+              "    console.log('✗ Login failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user1@example.com\",\n  \"password\": \"Password123!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "2. GET OR CREATE CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('cartId', jsonData.id);",
+              "    console.log('✓ Cart ID:', jsonData.id);",
+              "    console.log('✓ Total Price:', jsonData.totalPrice);",
+              "    console.log('✓ Items in cart:', jsonData.items.length);",
+              "} else {",
+              "    console.log('✗ Get cart failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/carts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "3. ADD FOOD TO CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('cartItemId1', jsonData.items[jsonData.items.length - 1].id);",
+              "    console.log('✓ Food added to cart');",
+              "    console.log('✓ New Total Price:', jsonData.totalPrice);",
+              "    console.log('✓ Total Items in cart:', jsonData.items.length);",
+              "    var lastItem = jsonData.items[jsonData.items.length - 1];",
+              "    console.log('✓ Last item - Product:', lastItem.productName, 'Qty:', lastItem.quantity, 'Price:', lastItem.priceAtTime);",
+              "} else {",
+              "    console.log('✗ Add to cart failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productType\": \"FOOD\",\n  \"productId\": 1,\n  \"quantity\": 2\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/carts/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "4. ADD DRINK TO CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('cartItemId2', jsonData.items[jsonData.items.length - 1].id);",
+              "    console.log('✓ Drink added to cart');",
+              "    console.log('✓ New Total Price:', jsonData.totalPrice);",
+              "    console.log('✓ Total Items in cart:', jsonData.items.length);",
+              "} else {",
+              "    console.log('✗ Add drink failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productType\": \"DRINK\",\n  \"productId\": 1,\n  \"quantity\": 1\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/carts/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "5. ADD FRESH PRODUCT TO CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('✓ Fresh product added to cart');",
+              "    console.log('✓ Total Items in cart:', jsonData.items.length);",
+              "    console.log('✓ Cart Total Price:', jsonData.totalPrice);",
+              "} else {",
+              "    console.log('✗ Add fresh product failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productType\": \"FRESH\",\n  \"productId\": 1,\n  \"quantity\": 3\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/carts/items",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "6. VIEW CURRENT CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('========== CURRENT CART ==========');",
+              "    console.log('Cart ID:', jsonData.id);",
+              "    console.log('User ID:', jsonData.userId);",
+              "    console.log('Total Price:', jsonData.totalPrice);",
+              "    console.log('Total Items:', jsonData.items.length);",
+              "    console.log('\\n--- Items Detail ---');",
+              "    jsonData.items.forEach((item, index) => {",
+              "        console.log(`${index + 1}. ${item.productName}`);",
+              "        console.log(`   Type: ${item.productType}, ID: ${item.productId}`);",
+              "        console.log(`   Price: ${item.priceAtTime}, Qty: ${item.quantity}`);",
+              "        console.log(`   Subtotal: ${item.priceAtTime * item.quantity}`);",
+              "    });",
+              "    console.log('==================================');",
+              "} else {",
+              "    console.log('✗ View cart failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/carts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "7. UPDATE CART ITEM QUANTITY",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('✓ Cart item quantity updated');",
+              "    console.log('✓ New Total Price:', jsonData.totalPrice);",
+              "    var updatedItem = jsonData.items.find(item => item.productType === 'FOOD');",
+              "    console.log('✓ Updated FOOD item quantity:', updatedItem.quantity);",
+              "} else {",
+              "    console.log('✗ Update cart item failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/carts/items/{{cartItemId1}}?quantity=3",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts",
+            "items",
+            "{{cartItemId1}}"
+          ],
+          "query": [
+            {
+              "key": "quantity",
+              "value": "3"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "8. REMOVE ITEM FROM CART",
+      "event": [
+        {
+          "listen": "test",
+          "script": [
+            "if (pm.response.code === 200) {",
+            "    var jsonData = pm.response.json();",
+            "    console.log('✓ Item removed from cart');",
+            "    console.log('✓ Remaining items:', jsonData.items.length);",
+            "    console.log('✓ New Total Price:', jsonData.totalPrice);",
+            "} else {",
+            "    console.log('✗ Remove item failed:', pm.response.text());",
+            "}"
+          ]
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/carts/items/{{cartItemId2}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts",
+            "items",
+            "{{cartItemId2}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "9. GET USER ADDRESSES",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.addresses && jsonData.addresses.length > 0) {",
+              "        var defaultAddr = jsonData.addresses.find(a => a.isDefault === true);",
+              "        if (defaultAddr) {",
+              "            pm.environment.set('addressType', defaultAddr.type);",
+              "            console.log('✓ Found default address type:', defaultAddr.type);",
+              "        } else {",
+              "            pm.environment.set('addressType', jsonData.addresses[0].type);",
+              "            console.log('✓ Using first address type:', jsonData.addresses[0].type);",
+              "        }",
+              "        console.log('✓ Total saved addresses:', jsonData.addresses.length);",
+              "    } else {",
+              "        console.log('⚠ No saved addresses found - will need to provide address in checkout');",
+              "    }",
+              "} else {",
+              "    console.log('✗ Get addresses failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10. CHECKOUT - CREATE ORDER",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('orderId', jsonData.id);",
+              "    console.log('========== ORDER CREATED ==========');",
+              "    console.log('✓ Order ID:', jsonData.id);",
+              "    console.log('✓ Order Status:', jsonData.status);",
+              "    console.log('✓ Total Price:', jsonData.totalPrice);",
+              "    console.log('✓ Delivery Address:', jsonData.address);",
+              "    console.log('✓ Number of items:', jsonData.items.length);",
+              "    console.log('\\n--- Order Items ---');",
+              "    jsonData.items.forEach((item, index) => {",
+              "        console.log(`${index + 1}. ${item.productName}`);",
+              "        console.log(`   Qty: ${item.quantity}, Price: ${item.priceAtTime}`);",
+              "    });",
+              "    console.log('====================================');",
+              "} else {",
+              "    console.log('✗ Checkout failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"addressType\": \"{{addressType}}\",\n  \"address\": null,\n  \"notes\": \"Giao nhanh vào sáng sớm nhé!\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/checkout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "checkout"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11. GET ORDER DETAILS",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('========== ORDER DETAILS ==========');",
+              "    console.log('Order ID:', jsonData.id);",
+              "    console.log('User ID:', jsonData.userId);",
+              "    console.log('Status:', jsonData.status);",
+              "    console.log('Total Price:', jsonData.totalPrice);",
+              "    console.log('Address:', jsonData.address);",
+              "    console.log('Notes:', jsonData.notes);",
+              "    console.log('Created At:', jsonData.createdAt);",
+              "    console.log('\\n--- Items ---');",
+              "    jsonData.items.forEach((item, index) => {",
+              "        console.log(`${index + 1}. ${item.productName} (${item.productType})`);",
+              "        console.log(`   Qty: ${item.quantity}, Price per unit: ${item.priceAtTime}`);",
+              "    });",
+              "    console.log('====================================');",
+              "} else {",
+              "    console.log('✗ Get order failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12. GET USER ORDERS (PAGINATED)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('========== USER ORDERS ==========');",
+              "    console.log('Page:', jsonData.pageNumber, 'of', jsonData.totalPages);",
+              "    console.log('Total Orders:', jsonData.totalRecords);",
+              "    console.log('Items on this page:', jsonData.data.length);",
+              "    console.log('\\n--- Orders ---');",
+              "    jsonData.data.forEach((order, index) => {",
+              "        console.log(`${index + 1}. Order ID: ${order.id}, Status: ${order.status}, Total: ${order.totalPrice}`);",
+              "    });",
+              "    console.log('==================================');",
+              "} else {",
+              "    console.log('✗ Get user orders failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/paging?page=1&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "paging"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13. CANCEL ORDER",
+      "event": [
+        {
+          "listen": "test",
+          "script": [
+            "if (pm.response.code === 200) {",
+            "    var jsonData = pm.response.json();",
+            "    console.log('✓ Order cancelled successfully');",
+            "    console.log('✓ New Status:', jsonData.status);",
+            "} else {",
+            "    console.log('✗ Cancel order failed:', pm.response.text());",
+            "}"
+          ]
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "14. CLEAR CART (OPTIONAL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": [
+            "if (pm.response.code === 200) {",
+            "    console.log('✓ Cart cleared successfully');",
+            "} else {",
+            "    console.log('✗ Clear cart failed:', pm.response.text());",
+            "}"
+          ]
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/carts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "carts"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cartId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cartItemId1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cartItemId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "addressType",
+      "value": "HOME",
+      "type": "string"
+    }
+  ]
+}

@@ -41,7 +41,7 @@ public class DessertService {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Dessert name cannot be empty");
         }
-        if (request.getPrice() == null || request.getPrice() <= 0) {
+        if (request.getPrice() == null || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Price must be greater than 0");
         }
         if (request.getQuantity() != null && request.getQuantity() < 0) {

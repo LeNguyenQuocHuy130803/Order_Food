@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -36,8 +37,8 @@ public class CartItem {
     @Column(nullable = true)
     private String imageUrl; // Product image URL from Cloudinary or similar
 
-    @Column(nullable = false)
-    private Long priceAtTime; // Price when added to cart
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal priceAtTime; // Price when added to cart
 
     @Column(nullable = false)
     private Integer quantity;

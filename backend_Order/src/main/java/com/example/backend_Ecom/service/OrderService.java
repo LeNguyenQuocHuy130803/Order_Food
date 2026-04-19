@@ -42,6 +42,14 @@ public class OrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "User not found"));
 
+        // Get cart first to validate it's not empty
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Cart not found or is empty"));
+
+        if (cart.getItems().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, "Cannot create order from empty cart");
+        }
+
         // 🔥 LẤY ADDRESS TỪ USER'S ADDRESSES LIST
         Address selectedAddress = null;
         
@@ -72,14 +80,6 @@ public class OrderService {
         }
 
         String addressString = selectedAddress.getType() + " - " + selectedAddress.getAddress();
-
-        // Get cart
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Cart not found or is empty"));
-
-        if (cart.getItems().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Cannot create order from empty cart");
-        }
 
         // Create order items from cart items
         Order order = Order.builder()
@@ -126,7 +126,7 @@ public class OrderService {
 
         // Clear cart after successful order & inventory update
         cart.getItems().clear();
-        cart.setTotalPrice(0L);
+        cart.setTotalPrice(java.math.BigDecimal.ZERO);
         cartRepository.save(cart);
 
         // 🔥 AUTO-CONFIRM: Hàng đã được check & giảm tồn kho thành công → tự động CONFIRMED

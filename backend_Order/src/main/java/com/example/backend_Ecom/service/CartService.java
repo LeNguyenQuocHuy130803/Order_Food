@@ -43,7 +43,7 @@ public class CartService {
                 .orElseGet(() -> {
                     Cart newCart = Cart.builder()
                             .user(user)
-                            .totalPrice(0L)
+                            .totalPrice(java.math.BigDecimal.ZERO)
                             .build();
                     return cartRepository.save(newCart);
                 });
@@ -82,6 +82,11 @@ public class CartService {
         if (isModified) {
             recalculateCartTotal(cart);
             cart = cartRepository.save(cart);
+        }
+        
+        // Ensure cart total is calculated even if empty
+        if (cart.getTotalPrice() == null) {
+            cart.setTotalPrice(java.math.BigDecimal.ZERO);
         }
 
         return mapToDto(cart);
@@ -132,7 +137,7 @@ public class CartService {
                             .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "User not found"));
                     Cart newCart = Cart.builder()
                             .user(user)
-                            .totalPrice(0L)
+                            .totalPrice(java.math.BigDecimal.ZERO)
                             .build();
                     return cartRepository.save(newCart);
                 });
@@ -245,7 +250,7 @@ public class CartService {
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Cart not found"));
 
         cart.getItems().clear();
-        cart.setTotalPrice(0L);
+        cart.setTotalPrice(java.math.BigDecimal.ZERO);
 
         cartRepository.save(cart);
         log.info("✓ Cart cleared for user: {}", userId);
@@ -255,9 +260,9 @@ public class CartService {
      * Tính lại tổng giá của giỏ hàng
      */
     private void recalculateCartTotal(Cart cart) {
-        long totalPrice = cart.getItems().stream()
-                .mapToLong(item -> item.getPriceAtTime() * item.getQuantity())
-                .sum();
+        java.math.BigDecimal totalPrice = cart.getItems().stream()
+                .map(item -> item.getPriceAtTime().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
         cart.setTotalPrice(totalPrice);
     }
 
@@ -301,11 +306,11 @@ public class CartService {
      */
     private static class ProductInfo {
         private final String name;
-        private final Long price;
+        private final java.math.BigDecimal price;
         private final Integer quantity;
         private final String imageUrl;
 
-        public ProductInfo(String name, Long price, Integer quantity, String imageUrl) {
+        public ProductInfo(String name, java.math.BigDecimal price, Integer quantity, String imageUrl) {
             this.name = name;
             this.price = price;
             this.quantity = quantity;
@@ -316,7 +321,7 @@ public class CartService {
             return name;
         }
 
-        public Long getPrice() {
+        public java.math.BigDecimal getPrice() {
             return price;
         }
 

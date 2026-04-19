@@ -3,6 +3,7 @@ package com.example.backend_Ecom.entity;
 import com.example.backend_Ecom.enums.DrinkCategory;
 import com.example.backend_Ecom.enums.Region;
 import com.example.backend_Ecom.enums.Unit;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
@@ -28,8 +29,8 @@ public class Drink {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
-    private Long price;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(nullable = false)
     @Builder.Default

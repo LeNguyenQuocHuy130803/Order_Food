@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Max;
 
 @Schema(description = "DTO for cart item request")
 @Data
@@ -22,5 +23,6 @@ public class CartItemRequestDto {
 
     @NotNull(message = "Quantity cannot be null")
     @Positive(message = "Quantity must be greater than 0")
+    @Max(value = 999, message = "Maximum 999 items per product")
     private Integer quantity;
 }

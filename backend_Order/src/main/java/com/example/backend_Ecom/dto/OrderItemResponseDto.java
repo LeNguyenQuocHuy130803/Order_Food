@@ -3,6 +3,7 @@ package com.example.backend_Ecom.dto;
 import com.example.backend_Ecom.enums.ProductType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Schema(description = "DTO for order item response")
@@ -22,7 +23,7 @@ public class OrderItemResponseDto {
 
     private String imageUrl;
 
-    private Long priceAtTime;
+    private BigDecimal priceAtTime;
 
     private Integer quantity;
 

@@ -99,15 +99,15 @@ public class OrderController {
     }
 
     /**
-     * PATCH /api/orders/{orderId}/cancel
-     * Hủy order (chỉ khi status là PENDING hoặc CONFIRMED)
+     * DELETE /api/orders/{orderId}
+     * ✅ Authenticated by SecurityConfig + JWT token
+     * Hủy order (chỉ khi status không phải DELIVERING hoặc DELIVERED)
      */
     @Operation(summary = "Cancel order")
-    @PreAuthorize("isAuthenticated() and (authentication.principal.id == #userId or hasAuthority('ROLE_Administrators'))")
-    @PatchMapping("/{orderId}/cancel")
+    @DeleteMapping("/{orderId}")
     public ResponseEntity<OrderResponseDto> cancelOrder(
             @Parameter(description = "Order ID") @PathVariable @Min(value = 1, message = "Order ID must be positive") Long orderId,
-            @Parameter(description = "User ID") @RequestParam @Min(value = 1, message = "User ID must be positive") Long userId) {
-        return ResponseEntity.ok(orderService.cancelOrder(orderId, userId));
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(orderService.cancelOrder(orderId, principal.getId()));
     }
 }

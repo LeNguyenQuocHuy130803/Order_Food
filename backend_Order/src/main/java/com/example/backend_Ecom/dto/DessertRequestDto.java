@@ -8,6 +8,7 @@ import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.math.BigDecimal;
 
 @Schema(description = "DTO for dessert request (create/update)")
 @Data
@@ -25,7 +26,7 @@ public class DessertRequestDto {
 
     @Schema(description = "Dessert price", example = "50000")
     @Min(value = 1, message = "Price must be greater than 0")
-    private Long price;
+    private BigDecimal price;
 
     @Schema(description = "Dessert quantity in stock", example = "50")
     @Min(value = 0, message = "Quantity cannot be negative")
