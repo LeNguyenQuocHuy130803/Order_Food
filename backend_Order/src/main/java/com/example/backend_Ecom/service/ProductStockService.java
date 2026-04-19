@@ -161,4 +161,130 @@ public class ProductStockService {
                 .message(message)
                 .build();
     }
+
+    /**
+     * Decrease stock for a product (atomically)
+     */
+    public void decreaseStockIfAvailable(Long productId, ProductType productType, Integer quantity) {
+        switch (productType) {
+            case FOOD:
+                decreaseFoodStock(productId, quantity);
+                break;
+            case DRINK:
+                decreaseDrinkStock(productId, quantity);
+                break;
+            case DESSERT:
+                decreaseDessertStock(productId, quantity);
+                break;
+            case FRESH:
+                decreaseFreshStock(productId, quantity);
+                break;
+            default:
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type");
+        }
+        log.info("✓ Stock decreased: {} - Type: {}, Quantity: {}", productId, productType, quantity);
+    }
+
+    private void decreaseFoodStock(Long productId, Integer quantity) {
+        Food food = foodRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food product not found"));
+        
+        if (food.getQuantity() < quantity) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Insufficient stock for Food ID: " + productId);
+        }
+        
+        food.setQuantity(food.getQuantity() - quantity);
+        foodRepository.save(food);
+    }
+
+    private void decreaseDrinkStock(Long productId, Integer quantity) {
+        Drink drink = drinkRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink product not found"));
+        
+        if (drink.getQuantity() < quantity) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Insufficient stock for Drink ID: " + productId);
+        }
+        
+        drink.setQuantity(drink.getQuantity() - quantity);
+        drinkRepository.save(drink);
+    }
+
+    private void decreaseDessertStock(Long productId, Integer quantity) {
+        Dessert dessert = dessertRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert product not found"));
+        
+        if (dessert.getQuantity() < quantity) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Insufficient stock for Dessert ID: " + productId);
+        }
+        
+        dessert.setQuantity(dessert.getQuantity() - quantity);
+        dessertRepository.save(dessert);
+    }
+
+    private void decreaseFreshStock(Long productId, Integer quantity) {
+        Fresh fresh = freshRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
+        
+        if (fresh.getQuantity() < quantity) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Insufficient stock for Fresh ID: " + productId);
+        }
+        
+        fresh.setQuantity(fresh.getQuantity() - quantity);
+        freshRepository.save(fresh);
+    }
+
+    /**
+     * Increase stock for a product (for refunds)
+     */
+    public void increaseStockIfNeeded(Long productId, ProductType productType, Integer quantity) {
+        switch (productType) {
+            case FOOD:
+                increaseFoodStock(productId, quantity);
+                break;
+            case DRINK:
+                increaseDrinkStock(productId, quantity);
+                break;
+            case DESSERT:
+                increaseDessertStock(productId, quantity);
+                break;
+            case FRESH:
+                increaseFreshStock(productId, quantity);
+                break;
+            default:
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type");
+        }
+        log.info("✓ Stock increased: {} - Type: {}, Quantity: {}", productId, productType, quantity);
+    }
+
+    private void increaseFoodStock(Long productId, Integer quantity) {
+        Food food = foodRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food product not found"));
+        food.setQuantity(food.getQuantity() + quantity);
+        foodRepository.save(food);
+    }
+
+    private void increaseDrinkStock(Long productId, Integer quantity) {
+        Drink drink = drinkRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink product not found"));
+        drink.setQuantity(drink.getQuantity() + quantity);
+        drinkRepository.save(drink);
+    }
+
+    private void increaseDessertStock(Long productId, Integer quantity) {
+        Dessert dessert = dessertRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert product not found"));
+        dessert.setQuantity(dessert.getQuantity() + quantity);
+        dessertRepository.save(dessert);
+    }
+
+    private void increaseFreshStock(Long productId, Integer quantity) {
+        Fresh fresh = freshRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
+        fresh.setQuantity(fresh.getQuantity() + quantity);
+        freshRepository.save(fresh);
+    }
 }
