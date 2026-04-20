@@ -129,12 +129,12 @@ public class OrderService {
         cart.setTotalPrice(java.math.BigDecimal.ZERO);
         cartRepository.save(cart);
 
-        // 🔥 AUTO-CONFIRM: Hàng đã được check & giảm tồn kho thành công → tự động CONFIRMED
-        savedOrder.setStatus(OrderStatus.CONFIRMED);
-        savedOrder = orderRepository.save(savedOrder);
-        log.info("✓ Order auto-confirmed (stock verified & inventory decreased): ID={}", savedOrder.getId());
+        // ⏳ PENDING: Inventory checked & decreased successfully, now waiting for payment
+        // Status will change to PAID after PayPal payment executed
+        // Then admin/system confirms order → CONFIRMED
+        log.info("✓ Order created & waiting for payment: ID={}", savedOrder.getId());
 
-        log.info("✓ Order completed successfully for user: {} (Order ID: {})", userId, savedOrder.getId());
+        log.info("✓ Order created successfully for user: {} (Order ID: {})", userId, savedOrder.getId());
 
         return mapToDto(savedOrder);
     }
@@ -340,6 +340,53 @@ public class OrderService {
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Update order status to PAID after PayPal payment successful
+     * Called by PaymentService after executePayment()
+     */
+    @Transactional
+    public OrderResponseDto updateOrderStatusToPaid(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Cannot update order status. Current status: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.PAID);
+        order = orderRepository.save(order);
+        log.info("✓ Order status updated to PAID: ID={}", orderId);
+
+        return mapToDto(order);
+    }
+
+    /**
+     * Confirm order - change from PAID to CONFIRMED
+     * Called by admin/system after verifying payment & order readiness
+     */
+    @Transactional
+    public OrderResponseDto confirmOrder(Long orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
+
+        // Only order creator or admin can confirm
+        if (!order.getUser().getId().equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to confirm this order");
+        }
+
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new AppException(ErrorCode.INVALID_REQUEST, 
+                "Cannot confirm order. Current status: " + order.getStatus() + " (must be PAID)");
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+        order = orderRepository.save(order);
+        log.info("✓ Order confirmed: ID={}", orderId);
+
+        return mapToDto(order);
     }
 
     /**

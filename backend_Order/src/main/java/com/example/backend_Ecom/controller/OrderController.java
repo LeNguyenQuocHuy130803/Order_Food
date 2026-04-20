@@ -110,4 +110,29 @@ public class OrderController {
             @AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(orderService.cancelOrder(orderId, principal.getId()));
     }
+
+    /**
+     * PATCH /api/orders/{orderId}/payment-confirmed
+     * Called by PaymentService after PayPal payment executed successfully
+     * Changes order status: PENDING → PAID
+     */
+    @Operation(summary = "Update order status to PAID (after payment confirmed)")
+    @PatchMapping("/{orderId}/payment-confirmed")
+    public ResponseEntity<OrderResponseDto> updateOrderStatusToPaid(
+            @Parameter(description = "Order ID") @PathVariable @Min(value = 1, message = "Order ID must be positive") Long orderId) {
+        return ResponseEntity.ok(orderService.updateOrderStatusToPaid(orderId));
+    }
+
+    /**
+     * PATCH /api/orders/{orderId}/confirm
+     * Confirm order - change from PAID to CONFIRMED
+     * Called by user/admin when ready to proceed with order
+     */
+    @Operation(summary = "Confirm order (PAID → CONFIRMED)")
+    @PatchMapping("/{orderId}/confirm")
+    public ResponseEntity<OrderResponseDto> confirmOrder(
+            @Parameter(description = "Order ID") @PathVariable @Min(value = 1, message = "Order ID must be positive") Long orderId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.ok(orderService.confirmOrder(orderId, principal.getId()));
+    }
 }

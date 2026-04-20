@@ -2,6 +2,7 @@ package com.example.backend_Ecom.enums;
 
 public enum OrderStatus {
     PENDING("Pending", "Chờ xác nhận"),
+    PAID("Paid", "Đã thanh toán"),
     CONFIRMED("Confirmed", "Đã xác nhận"),
     PREPARING("Preparing", "Đang chuẩn bị"),
     READY("Ready", "Sẵn sàng giao"),
