@@ -14,7 +14,14 @@ import java.util.List;
 
 /**
  * 🔥 Tự động chuyển trạng thái đơn hàng theo thời gian
- * CONFIRMED (5 phút) → PREPARING (10 phút) → READY (5 phút) → DELIVERING (5 phút) → DELIVERED
+ *
+ * Flow:
+ * PENDING (30p không thanh toán) → CANCELLED + hoàn kho
+ * PAID (1p) → CONFIRMED
+ * CONFIRMED (5p) → PREPARING
+ * PREPARING (5p) → READY
+ * READY (5p) → DELIVERING
+ * DELIVERING (5p) → DELIVERED
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -22,37 +29,72 @@ import java.util.List;
 public class OrderStatusScheduler {
 
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
 
     /**
-     * ✅ PENDING → CONFIRMED (sau 5 phút từ tạo hoặc khách confirm thủ công)
-     * Auto-confirm nếu khách không confirm thủ công
-     * Chạy mỗi 30 giây để check orders cần confirming
+     * ⏰ AUTO-CANCEL: PENDING → CANCELLED + hoàn kho (sau 30 phút không thanh toán)
+     *
+     * Khi user checkout nhưng KHÔNG thanh toán:
+     *  - Kho đã bị trừ (reserved) khi tạo order
+     *  - Sau 30 phút → tự động hủy order + hoàn lại kho
+     *
+     * Chạy mỗi 1 phút để detect order quá hạn
      */
-    @Scheduled(fixedDelay = 30000) // 30 seconds
-    @Transactional
-    public void transitionPendingToConfirmed() {
-        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        List<Order> pendingOrders = orderRepository.findByStatusAndCreatedAtBefore(
+    @Scheduled(fixedDelay = 60_000) // 1 phút
+    public void autoCancelUnpaidOrders() {
+        LocalDateTime thirtyMinutesAgo = LocalDateTime.now().minusMinutes(30);
+
+        List<Order> expiredOrders = orderRepository.findByStatusAndCreatedAtBefore(
             OrderStatus.PENDING,
-            fiveMinutesAgo
+            thirtyMinutesAgo
         );
 
-        for (Order order : pendingOrders) {
-            order.setStatus(OrderStatus.CONFIRMED);
-            orderRepository.save(order);
-            log.info("✅ Order {} auto-confirmed after 5 minutes (no manual confirmation received)", order.getId());
+        if (expiredOrders.isEmpty()) {
+            return;
+        }
+
+        log.info("⏰ Found {} PENDING order(s) unpaid > 30 minutes — auto-cancelling...", expiredOrders.size());
+
+        for (Order order : expiredOrders) {
+            try {
+                orderService.cancelOrderBySystem(order.getId());
+                log.info("✅ Order {} auto-cancelled: không thanh toán sau 30 phút — kho hàng đã hoàn lại", order.getId());
+            } catch (Exception e) {
+                log.error("❌ Failed to auto-cancel Order {}: {}", order.getId(), e.getMessage());
+            }
         }
     }
 
     /**
-     * ✅ CONFIRMED → PREPARING (sau 5 phút từ tạo)
-     * Chạy mỗi 30 giây để check orders cần updating
+     * ✅ PAID → CONFIRMED (sau 1 phút từ thanh toán)
+     * Auto-transition sau khi payment capture thành công
+     * Chạy mỗi 30 giây
      */
-    @Scheduled(fixedDelay = 30000) // 30 seconds
+    @Scheduled(fixedDelay = 30_000)
     @Transactional
-    public void transitionConfirmedToPrepairing() {
+    public void transitionPaidToConfirmed() {
+        LocalDateTime oneMinuteAgo = LocalDateTime.now().minusMinutes(1);
+        List<Order> paidOrders = orderRepository.findByStatusAndUpdatedAtBefore(
+            OrderStatus.PAID,
+            oneMinuteAgo
+        );
+
+        for (Order order : paidOrders) {
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+            log.info("✅ Order {} transitioned: PAID → CONFIRMED", order.getId());
+        }
+    }
+
+    /**
+     * ✅ CONFIRMED → PREPARING (sau 5 phút từ lúc được CONFIRMED)
+     * Chạy mỗi 30 giây
+     */
+    @Scheduled(fixedDelay = 30_000)
+    @Transactional
+    public void transitionConfirmedToPreparing() {
         LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        List<Order> confirmedOrders = orderRepository.findByStatusAndCreatedAtBefore(
+        List<Order> confirmedOrders = orderRepository.findByStatusAndUpdatedAtBefore(
             OrderStatus.CONFIRMED,
             fiveMinutesAgo
         );
@@ -65,16 +107,16 @@ public class OrderStatusScheduler {
     }
 
     /**
-     * ✅ PREPARING → READY (sau 15 phút từ tạo = 5+10)
+     * ✅ PREPARING → READY (sau 5 phút từ lúc được PREPARING)
      * Chạy mỗi 30 giây
      */
-    @Scheduled(fixedDelay = 30000) // 30 seconds
+    @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void transitionPreparingToReady() {
-        LocalDateTime fifteenMinutesAgo = LocalDateTime.now().minusMinutes(15);
-        List<Order> preparingOrders = orderRepository.findByStatusAndCreatedAtBefore(
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Order> preparingOrders = orderRepository.findByStatusAndUpdatedAtBefore(
             OrderStatus.PREPARING,
-            fifteenMinutesAgo
+            fiveMinutesAgo
         );
 
         for (Order order : preparingOrders) {
@@ -85,42 +127,42 @@ public class OrderStatusScheduler {
     }
 
     /**
-     * ✅ READY → DELIVERING (sau 20 phút từ tạo = 5+10+5)
-     * Tự động, không cần shipper quét
+     * ✅ READY → DELIVERING (sau 5 phút từ lúc được READY)
+     * Chạy mỗi 30 giây
      */
-    @Scheduled(fixedDelay = 30000) // 30 seconds
+    @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void transitionReadyToDelivering() {
-        LocalDateTime twentyMinutesAgo = LocalDateTime.now().minusMinutes(20);
-        List<Order> readyOrders = orderRepository.findByStatusAndCreatedAtBefore(
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Order> readyOrders = orderRepository.findByStatusAndUpdatedAtBefore(
             OrderStatus.READY,
-            twentyMinutesAgo
+            fiveMinutesAgo
         );
 
         for (Order order : readyOrders) {
             order.setStatus(OrderStatus.DELIVERING);
             orderRepository.save(order);
-            log.info("🚚 Order {} transitioned: READY → DELIVERING (auto shipper)", order.getId());
+            log.info("🚚 Order {} transitioned: READY → DELIVERING", order.getId());
         }
     }
 
     /**
-     * ✅ DELIVERING → DELIVERED (sau 25 phút từ tạo = 5+10+5+5)
-     * Tự động giao xong
+     * ✅ DELIVERING → DELIVERED (sau 5 phút từ lúc được DELIVERING)
+     * Chạy mỗi 30 giây
      */
-    @Scheduled(fixedDelay = 30000) // 30 seconds
+    @Scheduled(fixedDelay = 30_000)
     @Transactional
     public void transitionDeliveringToDelivered() {
-        LocalDateTime twentyFiveMinutesAgo = LocalDateTime.now().minusMinutes(25);
-        List<Order> deliveringOrders = orderRepository.findByStatusAndCreatedAtBefore(
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Order> deliveringOrders = orderRepository.findByStatusAndUpdatedAtBefore(
             OrderStatus.DELIVERING,
-            twentyFiveMinutesAgo
+            fiveMinutesAgo
         );
 
         for (Order order : deliveringOrders) {
             order.setStatus(OrderStatus.DELIVERED);
             orderRepository.save(order);
-            log.info("✅ Order {} transitioned: DELIVERING → DELIVERED (auto complete)", order.getId());
+            log.info("✅ Order {} transitioned: DELIVERING → DELIVERED", order.getId());
         }
     }
 }

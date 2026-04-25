@@ -29,7 +29,6 @@ public class OrderController {
 
     /**
      * POST /api/orders/checkout
-     * ✅ Authenticated by SecurityConfig + JWT token
      * Tạo order từ giỏ hàng (checkout)
      */
     @Operation(summary = "Create order from cart (checkout)")
@@ -42,8 +41,7 @@ public class OrderController {
 
     /**
      * GET /api/orders/{orderId}
-     * ✅ Authenticated by SecurityConfig + JWT token
-     * Lấy chi tiết order
+     * Lấy chi tiết order của chính user đó
      */
     @Operation(summary = "Get order details")
     @GetMapping("/{orderId}")
@@ -55,16 +53,15 @@ public class OrderController {
 
     /**
      * GET /api/orders/paging?page=1&size=10
-     * ✅ Authenticated by SecurityConfig + JWT token
      * Lấy tất cả orders của user hiện tại (phân trang)
      */
     @Operation(summary = "Get current user's orders with pagination")
     @GetMapping("/paging")
     public ResponseEntity<PaginatedOrderResponseDto> getUserOrders(
             @AuthenticationPrincipal UserPrincipal principal,
-            @Parameter(description = "Page number (1-based)", example = "1") 
+            @Parameter(description = "Page number (1-based)", example = "1")
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page must be >= 1") int page,
-            @Parameter(description = "Number of items per page", example = "10") 
+            @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be >= 1") @Max(value = 100, message = "Size must be <= 100") int size) {
         return ResponseEntity.ok(orderService.getUserOrders(principal.getId(), page, size));
     }
@@ -77,19 +74,18 @@ public class OrderController {
     @PreAuthorize("hasAuthority('ROLE_Administrators')")
     @GetMapping("/admin/paging")
     public ResponseEntity<PaginatedOrderResponseDto> getAllOrders(
-            @Parameter(description = "Page number (1-based)", example = "1") 
+            @Parameter(description = "Page number (1-based)", example = "1")
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page must be >= 1") int page,
-            @Parameter(description = "Number of items per page", example = "10") 
+            @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be >= 1") @Max(value = 100, message = "Size must be <= 100") int size) {
         return ResponseEntity.ok(orderService.getAllOrders(page, size));
     }
 
     /**
-     * PATCH /api/orders/{orderId}/status
-     * Cập nhật status của order (admin)
-     * Query param: status=CONFIRMED
+     * PATCH /api/orders/{orderId}/status?status=CONFIRMED
+     * Cập nhật status của order (admin only)
      */
-    @Operation(summary = "Update order status (admin)")
+    @Operation(summary = "Update order status (admin only)")
     @PreAuthorize("hasAuthority('ROLE_Administrators')")
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<OrderResponseDto> updateOrderStatus(
@@ -100,8 +96,7 @@ public class OrderController {
 
     /**
      * DELETE /api/orders/{orderId}
-     * ✅ Authenticated by SecurityConfig + JWT token
-     * Hủy order (chỉ khi status không phải DELIVERING hoặc DELIVERED)
+     * Hủy order — chỉ khi chưa DELIVERING hoặc DELIVERED
      */
     @Operation(summary = "Cancel order")
     @DeleteMapping("/{orderId}")
@@ -112,21 +107,9 @@ public class OrderController {
     }
 
     /**
-     * PATCH /api/orders/{orderId}/payment-confirmed
-     * Called by PaymentService after PayPal payment executed successfully
-     * Changes order status: PENDING → PAID
-     */
-    @Operation(summary = "Update order status to PAID (after payment confirmed)")
-    @PatchMapping("/{orderId}/payment-confirmed")
-    public ResponseEntity<OrderResponseDto> updateOrderStatusToPaid(
-            @Parameter(description = "Order ID") @PathVariable @Min(value = 1, message = "Order ID must be positive") Long orderId) {
-        return ResponseEntity.ok(orderService.updateOrderStatusToPaid(orderId));
-    }
-
-    /**
      * PATCH /api/orders/{orderId}/confirm
-     * Confirm order - change from PAID to CONFIRMED
-     * Called by user/admin when ready to proceed with order
+     * User xác nhận order sau khi thanh toán (PAID → CONFIRMED)
+     * Idempotent: nếu scheduler đã tự CONFIRMED rồi thì trả về bình thường
      */
     @Operation(summary = "Confirm order (PAID → CONFIRMED)")
     @PatchMapping("/{orderId}/confirm")

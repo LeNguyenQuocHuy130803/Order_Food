@@ -30,7 +30,7 @@ public interface FreshRepository extends JpaRepository<Fresh, Long>, JpaSpecific
      * @return 1 if success (stock decreased), 0 if failed (insufficient stock)
      */
     @Modifying
-    @Query(value = "UPDATE fresh SET quantity = quantity - :qty WHERE id = :id AND quantity >= :qty", nativeQuery = true)
+    @Query(value = "UPDATE freshs SET quantity = quantity - :qty WHERE id = :id AND quantity >= :qty", nativeQuery = true)
     @Transactional
     int decreaseStockIfAvailable(@Param("id") Long id, @Param("qty") Integer qty);
 
@@ -39,7 +39,7 @@ public interface FreshRepository extends JpaRepository<Fresh, Long>, JpaSpecific
      * @return affected rows count
      */
     @Modifying
-    @Query(value = "UPDATE fresh SET quantity = quantity + :qty WHERE id = :id", nativeQuery = true)
+    @Query(value = "UPDATE freshs SET quantity = quantity + :qty WHERE id = :id", nativeQuery = true)
     @Transactional
     int increaseStock(@Param("id") Long id, @Param("qty") Integer qty);
 }

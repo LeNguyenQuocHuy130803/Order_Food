@@ -42,10 +42,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/**").permitAll()
                         .requestMatchers("/api/addresses/**", "/api/foods/**", "/api/drinks/**", "/api/desserts/**").permitAll()
                         
-                        // ✅ CART & ORDER - CẦN AUTHENTICATION
+                        // ✅ CART, ORDER, PAYMENT - CẦN AUTHENTICATION
                         .requestMatchers("/api/carts/**").authenticated()
                         .requestMatchers("/api/orders/**").authenticated()
                         .requestMatchers("/api/stocks/**").authenticated()
+                        .requestMatchers("/api/payments/**").authenticated()
 
                         .anyRequest().permitAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

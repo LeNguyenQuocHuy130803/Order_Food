@@ -35,53 +35,67 @@ public class OrderService {
 
     /**
      * Tạo order từ giỏ hàng (checkout)
-     * @Transactional: Nếu order tạo thành công nhưng giảm inventory fail → rollback tất cả
+     * ✅ Dùng PESSIMISTIC_WRITE lock để tránh double-submit race condition
+     * ✅ Trừ kho ngay khi checkout (hàng được reserve)
+     * Nếu thanh toán thất bại → PaymentService gọi cancelOrderBySystem() để hoàn kho
      */
     @Transactional
     public OrderResponseDto createOrderFromCart(Long userId, OrderRequestDto request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "User not found"));
 
-        // Get cart first to validate it's not empty
-        Cart cart = cartRepository.findByUserId(userId)
+        // ✅ FIX RACE CONDITION: Dùng PESSIMISTIC lock khi checkout
+        // Ngăn 2 request tạo order cùng lúc từ cùng 1 giỏ hàng
+        Cart cart = cartRepository.findByUserIdWithLock(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Cart not found or is empty"));
 
         if (cart.getItems().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Cannot create order from empty cart");
         }
 
-        // 🔥 LẤY ADDRESS TỪ USER'S ADDRESSES LIST
-        Address selectedAddress = null;
-        
-        if (user.getAddresses() == null || user.getAddresses().isEmpty()) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, "Please add address first before checkout");
-        }
-        // 2️⃣ Nếu có addressType → lấy address theo type
+        // 🔥 LẤY ADDRESS - SUPPORT 2 CÁCH: SAVED ADDRESS HOẶC INLINE ADDRESS
+        String addressString = null;
+
+        // 1️⃣ CÁCH 1: Nếu có addressType → lấy từ saved addresses
         if (request.getAddressType() != null && !request.getAddressType().isEmpty()) {
-            selectedAddress = user.getAddresses().stream()
+            if (user.getAddresses() == null || user.getAddresses().isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "No saved addresses found. Please add address first");
+            }
+
+            Address selectedAddress = user.getAddresses().stream()
                     .filter(addr -> addr.getType().name().equalsIgnoreCase(request.getAddressType()))
                     .findFirst()
-                    .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, 
-                        "Address type '" + request.getAddressType() + "' not found"));
+                    .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST,
+                        "Address type '" + request.getAddressType() + "' not found in saved addresses"));
+
+            addressString = selectedAddress.getType() + " - " + selectedAddress.getAddress();
         }
-        // 3️⃣ Nếu không chọn → lấy default (HOME hoặc isDefault=true)
-        else {
-            selectedAddress = user.getAddresses().stream()
+        // 2️⃣ CÁCH 2: Nếu không có addressType nhưng có inline address → dùng inline
+        else if (request.getAddress() != null && !request.getAddress().trim().isEmpty()) {
+            addressString = request.getAddress();
+        }
+        // 3️⃣ Nếu không cung cấp → lấy default từ saved addresses
+        else if (user.getAddresses() != null && !user.getAddresses().isEmpty()) {
+            Address defaultAddress = user.getAddresses().stream()
                     .filter(addr -> addr.getIsDefault() != null && addr.getIsDefault())
                     .findFirst()
                     .orElseGet(() -> user.getAddresses().stream()
                             .filter(addr -> addr.getType().name().equalsIgnoreCase("HOME"))
                             .findFirst()
                             .orElse(null));
-            
-            if (selectedAddress == null) {
-                throw new AppException(ErrorCode.INVALID_REQUEST, "No default address found. Please set a default address");
+
+            if (defaultAddress != null) {
+                addressString = defaultAddress.getType() + " - " + defaultAddress.getAddress();
             }
         }
 
-        String addressString = selectedAddress.getType() + " - " + selectedAddress.getAddress();
+        // ❌ Nếu vẫn không có address → lỗi
+        if (addressString == null || addressString.trim().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                "No address found. Please provide either addressType or inline address");
+        }
 
-        // Create order items from cart items
+        // Tạo Order
         Order order = Order.builder()
                 .user(user)
                 .totalPrice(cart.getTotalPrice())
@@ -90,7 +104,7 @@ public class OrderService {
                 .notes(request.getNotes())
                 .build();
 
-        // Create order items
+        // Tạo order items từ cart items
         List<OrderItem> orderItems = cart.getItems().stream()
                 .map(cartItem -> OrderItem.builder()
                         .order(order)
@@ -105,16 +119,17 @@ public class OrderService {
 
         order.setItems(orderItems);
 
-        // Validate products still exist and have stock
+        // Validate sản phẩm còn tồn tại và có đủ stock trước khi trừ kho
         for (OrderItem item : orderItems) {
             validateProductAndStock(item.getProductType(), item.getProductId(), item.getQuantity());
         }
 
         Order savedOrder = orderRepository.save(order);
-        log.info("✓ Order created (PENDING): ID={}, User={}, Address={}, Total={} VND", 
+        log.info("✓ Order created (PENDING): ID={}, User={}, Address={}, Total={} VND",
             savedOrder.getId(), userId, addressString, savedOrder.getTotalPrice());
 
-        // Decrease inventory for each product (CRITICAL - must succeed for order to complete)
+        // Trừ kho cho từng sản phẩm (reserve hàng cho order)
+        // Nếu thanh toán thất bại → PaymentService gọi cancelOrderBySystem() để hoàn kho
         try {
             for (OrderItem item : orderItems) {
                 decreaseProductQuantity(item.getProductType(), item.getProductId(), item.getQuantity());
@@ -124,17 +139,12 @@ public class OrderService {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Failed to process inventory: " + e.getMessage());
         }
 
-        // Clear cart after successful order & inventory update
+        // Xóa giỏ hàng sau khi checkout thành công
         cart.getItems().clear();
         cart.setTotalPrice(java.math.BigDecimal.ZERO);
         cartRepository.save(cart);
 
-        // ⏳ PENDING: Inventory checked & decreased successfully, now waiting for payment
-        // Status will change to PAID after PayPal payment executed
-        // Then admin/system confirms order → CONFIRMED
-        log.info("✓ Order created & waiting for payment: ID={}", savedOrder.getId());
-
-        log.info("✓ Order created successfully for user: {} (Order ID: {})", userId, savedOrder.getId());
+        log.info("✓ Order created & inventory reserved. Waiting for payment: ID={}", savedOrder.getId());
 
         return mapToDto(savedOrder);
     }
@@ -148,7 +158,7 @@ public class OrderService {
                 Food food = foodRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food product not found"));
                 if (food.getQuantity() < requestedQuantity) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST, 
+                    throw new AppException(ErrorCode.INVALID_REQUEST,
                         "Food: " + food.getName() + " - Not enough stock. Available: " + food.getQuantity());
                 }
                 break;
@@ -157,7 +167,7 @@ public class OrderService {
                 Drink drink = drinkRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink product not found"));
                 if (drink.getQuantity() < requestedQuantity) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST, 
+                    throw new AppException(ErrorCode.INVALID_REQUEST,
                         "Drink: " + drink.getName() + " - Not enough stock. Available: " + drink.getQuantity());
                 }
                 break;
@@ -166,7 +176,7 @@ public class OrderService {
                 Dessert dessert = dessertRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert product not found"));
                 if (dessert.getQuantity() < requestedQuantity) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST, 
+                    throw new AppException(ErrorCode.INVALID_REQUEST,
                         "Dessert: " + dessert.getName() + " - Not enough stock. Available: " + dessert.getQuantity());
                 }
                 break;
@@ -175,7 +185,7 @@ public class OrderService {
                 Fresh fresh = freshRepository.findById(productId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
                 if (fresh.getQuantity() < requestedQuantity) {
-                    throw new AppException(ErrorCode.INVALID_REQUEST, 
+                    throw new AppException(ErrorCode.INVALID_REQUEST,
                         "Fresh: " + fresh.getName() + " - Not enough stock. Available: " + fresh.getQuantity());
                 }
                 break;
@@ -192,7 +202,6 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
 
-        // Check if order belongs to user
         if (!order.getUser().getId().equals(userId)) {
             throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to view this order");
         }
@@ -202,16 +211,12 @@ public class OrderService {
 
     /**
      * Lấy tất cả orders của user (phân trang)
-     * Query trực tiếp từ DB với userId filter (không filter trong Java)
      */
     public PaginatedOrderResponseDto getUserOrders(Long userId, int page, int size) {
-        // Validate user exists
         userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "User not found"));
 
-        // Convert 1-based page to 0-based for Spring Data
         Pageable pageable = PageRequest.of(page - 1, size);
-
         Page<Order> orderPage = orderRepository.findByUserId(userId, pageable);
 
         List<OrderResponseDto> orderDtos = orderPage.getContent().stream()
@@ -234,7 +239,6 @@ public class OrderService {
      */
     public PaginatedOrderResponseDto getAllOrders(int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size);
-
         Page<Order> orderPage = orderRepository.findAll(pageable);
 
         List<OrderResponseDto> orderDtos = orderPage.getContent().stream()
@@ -253,7 +257,7 @@ public class OrderService {
     }
 
     /**
-     * Cập nhật status của order
+     * Cập nhật status của order (admin)
      */
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
@@ -261,15 +265,14 @@ public class OrderService {
 
         order.setStatus(newStatus);
         order = orderRepository.save(order);
-
         log.info("✓ Order status updated: {} -> {}", orderId, newStatus);
 
         return mapToDto(order);
     }
 
     /**
-     * Hủy order (chỉ khi status không phải DELIVERING hoặc DELIVERED)
-     * @Transactional: Nếu hủy thành công nhưng restore inventory fail → rollback
+     * Hủy order bởi user (chỉ khi chưa DELIVERING hoặc DELIVERED)
+     * Hoàn kho sau khi hủy
      */
     @Transactional
     public OrderResponseDto cancelOrder(Long orderId, Long userId) {
@@ -280,16 +283,15 @@ public class OrderService {
             throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to cancel this order");
         }
 
-        // 🔥 Chỉ cho phép hủy nếu status < DELIVERING (tức PENDING, CONFIRMED, PREPARING, hoặc READY)
         if (order.getStatus() == OrderStatus.DELIVERING || order.getStatus() == OrderStatus.DELIVERED) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, 
+            throw new AppException(ErrorCode.INVALID_REQUEST,
                 "Cannot cancel order with status: " + order.getStatus() + ". Shipper is already delivering or order delivered.");
         }
 
         order.setStatus(OrderStatus.CANCELLED);
         order = orderRepository.save(order);
 
-        // Restore inventory for all order items (CRITICAL)
+        // Hoàn kho
         try {
             for (OrderItem item : order.getItems()) {
                 restoreProductQuantity(item.getProductType(), item.getProductId(), item.getQuantity());
@@ -305,8 +307,98 @@ public class OrderService {
     }
 
     /**
-     * Map Order entity to OrderResponseDto
+     * ✅ Update order status to PAID — gọi bởi PaymentService sau khi capture thành công
+     * Idempotent: nếu order đã PAID rồi thì không throw, trả về kết quả bình thường
      */
+    @Transactional
+    public OrderResponseDto updateOrderStatusToPaid(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
+
+        // Idempotent: nếu đã PAID rồi thì không làm gì thêm (tránh lỗi khi PayPal retry)
+        if (order.getStatus() == OrderStatus.PAID) {
+            log.info("ℹ️ Order {} already PAID — skipping (idempotent)", orderId);
+            return mapToDto(order);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                "Cannot mark as PAID. Current status: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.PAID);
+        order = orderRepository.save(order);
+        log.info("✓ Order status updated to PAID: ID={}", orderId);
+
+        return mapToDto(order);
+    }
+
+    /**
+     * ✅ Hủy order bởi system (khi thanh toán thất bại) — không check userId
+     * Hoàn kho sau khi hủy
+     */
+    @Transactional
+    public void cancelOrderBySystem(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            log.warn("⚠️ cancelOrderBySystem: Order {} not found", orderId);
+            return;
+        }
+
+        // Chỉ hủy nếu đang PENDING (thanh toán chưa hoàn tất)
+        if (order.getStatus() != OrderStatus.PENDING) {
+            log.info("ℹ️ cancelOrderBySystem: Order {} is already {} — skip cancel", orderId, order.getStatus());
+            return;
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        // Hoàn kho
+        for (OrderItem item : order.getItems()) {
+            try {
+                restoreProductQuantity(item.getProductType(), item.getProductId(), item.getQuantity());
+            } catch (Exception e) {
+                log.error("❌ Failed to restore inventory for item {} in Order {}", item.getId(), orderId, e);
+            }
+        }
+
+        log.info("✅ Order {} cancelled by system (payment failed) — inventory restored", orderId);
+    }
+
+    /**
+     * Confirm order — chuyển PAID → CONFIRMED bởi user/admin
+     * ✅ FIX: Nếu scheduler đã tự CONFIRMED rồi thì không lỗi, trả kết quả bình thường
+     */
+    @Transactional
+    public OrderResponseDto confirmOrder(Long orderId, Long userId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to confirm this order");
+        }
+
+        // Idempotent: nếu scheduler đã CONFIRMED rồi → bình thường trả về
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            log.info("ℹ️ Order {} already CONFIRMED — returning current state", orderId);
+            return mapToDto(order);
+        }
+
+        if (order.getStatus() != OrderStatus.PAID) {
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                "Cannot confirm order. Current status: " + order.getStatus() + " (must be PAID or CONFIRMED)");
+        }
+
+        order.setStatus(OrderStatus.CONFIRMED);
+        order = orderRepository.save(order);
+        log.info("✓ Order confirmed: ID={}", orderId);
+
+        return mapToDto(order);
+    }
+
+    // ========================= PRIVATE HELPERS =========================
+
     private OrderResponseDto mapToDto(Order order) {
         List<com.example.backend_Ecom.dto.OrderItemResponseDto> items = order.getItems().stream()
                 .map(this::mapItemToDto)
@@ -325,9 +417,6 @@ public class OrderService {
                 .build();
     }
 
-    /**
-     * Map OrderItem entity to OrderItemResponseDto
-     */
     private com.example.backend_Ecom.dto.OrderItemResponseDto mapItemToDto(OrderItem item) {
         return com.example.backend_Ecom.dto.OrderItemResponseDto.builder()
                 .id(item.getId())
@@ -343,64 +432,12 @@ public class OrderService {
     }
 
     /**
-     * Update order status to PAID after PayPal payment successful
-     * Called by PaymentService after executePayment()
-     */
-    @Transactional
-    public OrderResponseDto updateOrderStatusToPaid(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
-
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, 
-                "Cannot update order status. Current status: " + order.getStatus());
-        }
-
-        order.setStatus(OrderStatus.PAID);
-        order = orderRepository.save(order);
-        log.info("✓ Order status updated to PAID: ID={}", orderId);
-
-        return mapToDto(order);
-    }
-
-    /**
-     * Confirm order - change from PAID to CONFIRMED
-     * Called by admin/system after verifying payment & order readiness
-     */
-    @Transactional
-    public OrderResponseDto confirmOrder(Long orderId, Long userId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
-
-        // Only order creator or admin can confirm
-        if (!order.getUser().getId().equals(userId)) {
-            throw new AppException(ErrorCode.FORBIDDEN, "You do not have permission to confirm this order");
-        }
-
-        if (order.getStatus() != OrderStatus.PAID) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, 
-                "Cannot confirm order. Current status: " + order.getStatus() + " (must be PAID)");
-        }
-
-        order.setStatus(OrderStatus.CONFIRMED);
-        order = orderRepository.save(order);
-        log.info("✓ Order confirmed: ID={}", orderId);
-
-        return mapToDto(order);
-    }
-
-    /**
-     * 🚀 Giảm số lượng sản phẩm từ inventory sau khi checkout thành công
-     * ✅ OPTIMISTIC UPDATE: Atomic operation at DB level using WHERE condition
-     * UPDATE quantity = quantity - :qty WHERE id = :id AND quantity >= :qty
-     * 
-     * @return: affected rows count (1 = success, 0 = insufficient stock)
+     * Giảm số lượng sản phẩm từ inventory (atomic DB update)
      */
     private void decreaseProductQuantity(ProductType productType, Long productId, Integer quantityToPurchase) {
         String productName = null;
         int affectedRows = 0;
 
-        // 🔥 Fetch product name first for logging
         switch (productType) {
             case FOOD:
                 Food food = foodRepository.findById(productId)
@@ -434,21 +471,16 @@ public class OrderService {
                 throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type: " + productType);
         }
 
-        // 💥 Critical check: if affected rows = 0 → someone else bought it already (race condition handled!)
         if (affectedRows == 0) {
-            throw new AppException(ErrorCode.INVALID_REQUEST, 
-                "Out of stock for " + productType.toString() + ": " + productName + ". Quantity requested: " + quantityToPurchase);
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                "Out of stock for " + productType + ": " + productName + ". Requested: " + quantityToPurchase);
         }
 
-        log.info("✅ Inventory decreased (OPTIMISTIC): {} '{}' sold: {} (DB atomic update)", 
-            productType, productName, quantityToPurchase);
+        log.info("✅ Inventory decreased: {} '{}' sold: {}", productType, productName, quantityToPurchase);
     }
 
     /**
-     * 🚀 Restore số lượng sản phẩm về inventory khi order bị hủy
-     * ✅ OPTIMISTIC UPDATE: Atomic operation at DB level
-     * UPDATE quantity = quantity + :qty WHERE id = :id
-     * (Phục hồi lại nhập kho)
+     * Hoàn số lượng sản phẩm về inventory khi order bị hủy (atomic DB update)
      */
     private void restoreProductQuantity(ProductType productType, Long productId, Integer quantityToRestore) {
         String productName = null;
@@ -488,9 +520,7 @@ public class OrderService {
         }
 
         if (affectedRows > 0) {
-            log.info("✅ Inventory restored: {} '{}' quantity += {} (DB atomic update)", 
-                productType, productName, quantityToRestore);
+            log.info("✅ Inventory restored: {} '{}' quantity += {}", productType, productName, quantityToRestore);
         }
     }
 }
-

@@ -2,9 +2,8 @@
   "info": {
     "_postman_id": "cart-checkout-flow-collection",
     "name": "Order Food - Cart & Checkout Flow",
-    "description": "Complete flow: Login -> Add to Cart -> Update Cart -> Checkout -> Order Management",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "12345"
+    "description": "Complete flow: Login -> Add to Cart -> Update Cart -> Checkout -> PayPal Payment -> Order Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
@@ -30,10 +29,7 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
@@ -41,14 +37,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/auth/login",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "auth",
-            "login"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
         }
       },
       "response": []
@@ -76,26 +66,18 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/carts",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts"]
         }
       },
       "response": []
     },
     {
-      "name": "2.5. CHECK SINGLE PRODUCT STOCK",
+      "name": "2.5. CHECK PRODUCT STOCK (Requires Auth)",
       "event": [
         {
           "listen": "test",
@@ -103,13 +85,17 @@
             "exec": [
               "if (pm.response.code === 200) {",
               "    var jsonData = pm.response.json();",
-              "    var item = jsonData.items[0];",
-              "    console.log('========== SINGLE ITEM STOCK CHECK ==========');",
-              "    console.log('Product:', item.productName);",
-              "    console.log('Status:', item.status);",
-              "    console.log('Available Qty:', item.availableQuantity);",
-              "    console.log('Message:', item.message);",
-              "    console.log('============================================');",
+              "    console.log('========== STOCK CHECK ==========');",
+              "    console.log('All available:', jsonData.allAvailable);",
+              "    console.log('Insufficient items:', jsonData.insufficientItems);",
+              "    jsonData.items.forEach(function(item) {",
+              "        console.log('---');",
+              "        console.log('Product:', item.productName);",
+              "        console.log('Status:', item.status);",
+              "        console.log('Requested:', item.requestedQuantity, '| Available:', item.availableQuantity);",
+              "        console.log('Message:', item.message);",
+              "    });",
+              "    console.log('=================================');",
               "} else {",
               "    console.log('✗ Stock check failed:', pm.response.text());",
               "}"
@@ -120,25 +106,17 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"items\": [\n    {\n      \"productType\": \"FOOD\",\n      \"productId\": 1,\n      \"requestedQuantity\": 2\n    }\n  ]\n}"
+          "raw": "{\n  \"items\": [\n    {\n      \"productType\": \"FOOD\",\n      \"productId\": 1,\n      \"requestedQuantity\": 2\n    },\n    {\n      \"productType\": \"DRINK\",\n      \"productId\": 1,\n      \"requestedQuantity\": 1\n    }\n  ]\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/stocks/check",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "stocks",
-            "check"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "stocks", "check"]
         }
       },
       "response": []
@@ -157,7 +135,7 @@
               "    console.log('✓ New Total Price:', jsonData.totalPrice);",
               "    console.log('✓ Total Items in cart:', jsonData.items.length);",
               "    var lastItem = jsonData.items[jsonData.items.length - 1];",
-              "    console.log('✓ Last item - Product:', lastItem.productName, 'Qty:', lastItem.quantity, 'Price:', lastItem.priceAtTime);",
+              "    console.log('✓ Last item:', lastItem.productName, '| Qty:', lastItem.quantity, '| Price:', lastItem.priceAtTime);",
               "} else {",
               "    console.log('✗ Add to cart failed:', pm.response.text());",
               "}"
@@ -168,14 +146,8 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
@@ -183,14 +155,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/carts/items",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts",
-            "items"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts", "items"]
         }
       },
       "response": []
@@ -218,14 +184,8 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
@@ -233,14 +193,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/carts/items",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts",
-            "items"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts", "items"]
         }
       },
       "response": []
@@ -267,14 +221,8 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
@@ -282,14 +230,8 @@
         },
         "url": {
           "raw": "{{baseUrl}}/api/carts/items",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts",
-            "items"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts", "items"]
         }
       },
       "response": []
@@ -305,15 +247,11 @@
               "    var jsonData = pm.response.json();",
               "    console.log('========== CURRENT CART ==========');",
               "    console.log('Cart ID:', jsonData.id);",
-              "    console.log('User ID:', jsonData.userId);",
               "    console.log('Total Price:', jsonData.totalPrice);",
               "    console.log('Total Items:', jsonData.items.length);",
-              "    console.log('\\n--- Items Detail ---');",
-              "    jsonData.items.forEach((item, index) => {",
-              "        console.log(`${index + 1}. ${item.productName}`);",
-              "        console.log(`   Type: ${item.productType}, ID: ${item.productId}`);",
-              "        console.log(`   Price: ${item.priceAtTime}, Qty: ${item.quantity}`);",
-              "        console.log(`   Subtotal: ${item.priceAtTime * item.quantity}`);",
+              "    jsonData.items.forEach(function(item, index) {",
+              "        console.log((index+1) + '. ' + item.productName + ' (' + item.productType + ')');",
+              "        console.log('   Qty:', item.quantity, '| Price:', item.priceAtTime);",
               "    });",
               "    console.log('==================================');",
               "} else {",
@@ -326,20 +264,12 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/carts",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts"]
         }
       },
       "response": []
@@ -355,8 +285,6 @@
               "    var jsonData = pm.response.json();",
               "    console.log('✓ Cart item quantity updated');",
               "    console.log('✓ New Total Price:', jsonData.totalPrice);",
-              "    var updatedItem = jsonData.items.find(item => item.productType === 'FOOD');",
-              "    console.log('✓ Updated FOOD item quantity:', updatedItem.quantity);",
               "} else {",
               "    console.log('✗ Update cart item failed:', pm.response.text());",
               "}"
@@ -367,34 +295,19 @@
       "request": {
         "method": "PATCH",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/carts/items/{{cartItemId1}}?quantity=3",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts",
-            "items",
-            "{{cartItemId1}}"
-          ],
-          "query": [
-            {
-              "key": "quantity",
-              "value": "3"
-            }
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts", "items", "{{cartItemId1}}"],
+          "query": [{ "key": "quantity", "value": "3" }]
         }
       },
       "response": []
     },
     {
-      "name": "10. GET USER ADDRESSES",
+      "name": "8. REMOVE ITEM FROM CART",
       "event": [
         {
           "listen": "test",
@@ -415,22 +328,12 @@
       "request": {
         "method": "DELETE",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/carts/items/{{cartItemId2}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts",
-            "items",
-            "{{cartItemId2}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts", "items", "{{cartItemId2}}"]
         }
       },
       "response": []
@@ -445,17 +348,18 @@
               "if (pm.response.code === 200) {",
               "    var jsonData = pm.response.json();",
               "    if (jsonData.addresses && jsonData.addresses.length > 0) {",
-              "        var defaultAddr = jsonData.addresses.find(a => a.isDefault === true);",
+              "        var defaultAddr = jsonData.addresses.find(function(a) { return a.isDefault === true; });",
               "        if (defaultAddr) {",
               "            pm.environment.set('addressType', defaultAddr.type);",
-              "            console.log('✓ Found default address type:', defaultAddr.type);",
+              "            console.log('✓ Default address type:', defaultAddr.type);",
               "        } else {",
               "            pm.environment.set('addressType', jsonData.addresses[0].type);",
               "            console.log('✓ Using first address type:', jsonData.addresses[0].type);",
               "        }",
               "        console.log('✓ Total saved addresses:', jsonData.addresses.length);",
               "    } else {",
-              "        console.log('⚠ No saved addresses found - will need to provide address in checkout');",
+              "        pm.environment.set('addressType', '');",
+              "        console.log('⚠ No saved addresses — will use inline address in checkout');",
               "    }",
               "} else {",
               "    console.log('✗ Get addresses failed:', pm.response.text());",
@@ -467,21 +371,12 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/users/{{userId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "users",
-            "{{userId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "users", "{{userId}}"]
         }
       },
       "response": []
@@ -496,19 +391,19 @@
               "if (pm.response.code === 200) {",
               "    var jsonData = pm.response.json();",
               "    pm.environment.set('orderId', jsonData.id);",
-              "    console.log('========== ORDER CREATED (PENDING) ==========');",
+              "    console.log('========== ORDER CREATED ==========');",
               "    console.log('✓ Order ID:', jsonData.id);",
-              "    console.log('✓ Order Status:', jsonData.status);",
-              "    console.log('✓ Total Price:', jsonData.totalPrice);",
+              "    console.log('✓ Status:', jsonData.status, '(PENDING - chờ thanh toán)');",
+              "    console.log('✓ Total Price (VND):', jsonData.totalPrice);",
               "    console.log('✓ Delivery Address:', jsonData.address);",
-              "    console.log('✓ Number of items:', jsonData.items.length);",
-              "    console.log('⏳ STATUS: PENDING - Waiting for payment');",
-              "    console.log('\\n--- Order Items ---');",
-              "    jsonData.items.forEach((item, index) => {",
-              "        console.log(`${index + 1}. ${item.productName}`);",
-              "        console.log(`   Qty: ${item.quantity}, Price: ${item.priceAtTime}`);",
+              "    console.log('✓ Notes:', jsonData.notes);",
+              "    console.log('✓ Items:', jsonData.items.length);",
+              "    jsonData.items.forEach(function(item, i) {",
+              "        console.log('  ' + (i+1) + '. ' + item.productName + ' x' + item.quantity + ' @ ' + item.priceAtTime);",
               "    });",
-              "    console.log('============================================');",
+              "    console.log('');",
+              "    console.log('⏩ Next: Run #11 to create PayPal payment');",
+              "    console.log('===================================');",
               "} else {",
               "    console.log('✗ Checkout failed:', pm.response.text());",
               "}"
@@ -519,46 +414,53 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"addressType\": \"{{addressType}}\",\n  \"address\": null,\n  \"notes\": \"Giao nhanh vào sáng sớm nhé!\"\n}"
+          "raw": "{\n  \"addressType\": \"HOME\",\n  \"notes\": \"Giao nhanh vào sáng sớm nhé!\"\n}",
+          "options": {
+            "raw": { "language": "json" }
+          }
         },
         "url": {
           "raw": "{{baseUrl}}/api/orders/checkout",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "checkout"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "checkout"]
         }
       },
       "response": []
     },
     {
-      "name": "11. SIMULATE PAYPAL PAYMENT (MOCK)",
+      "name": "11. CREATE PAYPAL PAYMENT (Get approveUrl)",
       "event": [
         {
           "listen": "test",
           "script": {
             "exec": [
               "if (pm.response.code === 200) {",
-              "    console.log('✓ (MOCK) PayPal payment received');",
-              "    console.log('✓ Payment ID: PAY-12345678');",
-              "    console.log('✓ Next step: Update order status to PAID');",
+              "    var jsonData = pm.response.json();",
+              "    pm.environment.set('paypalOrderId', jsonData.paypalOrderId);",
+              "    console.log('========== PAYPAL ORDER CREATED ==========');",
+              "    console.log('✓ PayPal Order ID:', jsonData.paypalOrderId);",
+              "    console.log('✓ Our Order ID:', jsonData.orderId);",
+              "    console.log('✓ Amount VND:', jsonData.amountVND);",
+              "    console.log('✓ Amount USD:', jsonData.amountUSD);",
+              "    console.log('');",
+              "    console.log('🔗 PAYPAL APPROVAL URL (mở link này trong browser):');",
+              "    console.log(jsonData.approveUrl);",
+              "    console.log('');",
+              "    console.log('📋 HƯỚNG DẪN:');",
+              "    console.log('  1. Copy link trên, mở trong browser');",
+              "    console.log('  2. Login PayPal Sandbox');",
+              "    console.log('  3. Bấm Approve/Pay');",
+              "    console.log('  4. Browser sẽ redirect về: http://localhost:3000/payment/success?token=...');",
+              "    console.log('  5. Copy phần ?token=XXX (đó là paypalOrderId)');",
+              "    console.log('  6. Set vào biến paypalOrderId rồi chạy #13');",
+              "    console.log('==========================================');",
               "} else {",
-              "    console.log('✗ Payment failed:', pm.response.text());",
+              "    console.log('✗ Create PayPal payment failed:', pm.response.text());",
               "}"
             ]
           }
@@ -567,31 +469,65 @@
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"message\": \"User approved PayPal payment and returned to app\"\n}"
+          "raw": "{\n  \"orderId\": {{orderId}}\n}",
+          "options": {
+            "raw": { "language": "json" }
+          }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/payments/mock",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "payments",
-            "mock"
-          ]
+          "raw": "{{baseUrl}}/api/payments/paypal/create-payment",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "paypal", "create-payment"]
         }
       },
       "response": []
     },
     {
-      "name": "12. UPDATE ORDER STATUS TO PAID (After Payment)",
+      "name": "12. [MANUAL STEP] APPROVE ON PAYPAL SANDBOX",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log('========== HƯỚNG DẪN APPROVE TRÊN PAYPAL SANDBOX ==========');",
+              "console.log('');",
+              "console.log('⚠️  ĐÂY LÀ BƯỚC THỦ CÔNG - KHÔNG GỌI API');",
+              "console.log('');",
+              "console.log('BƯỚC 1: Lấy approveUrl từ kết quả request #11');",
+              "console.log('BƯỚC 2: Mở link đó trong browser');",
+              "console.log('BƯỚC 3: Đăng nhập PayPal Sandbox bằng tài khoản buyer:');",
+              "console.log('   Email   : sb-xxxxx@personal.example.com');",
+              "console.log('   Password: Seller@123 (hoặc pass sandbox của bạn)');",
+              "console.log('BƯỚC 4: Bấm nút \"Pay Now\" / \"Approve\"');",
+              "console.log('BƯỚC 5: Browser redirect về:');",
+              "console.log('   http://localhost:3000/payment/success?token=PAYPAL_ORDER_ID&PayerID=...');",
+              "console.log('BƯỚC 6: Lấy giá trị ?token=... đó chính là paypalOrderId');",
+              "console.log('   (Hoặc dùng paypalOrderId đã lưu từ bước #11)');",
+              "console.log('BƯỚC 7: Chạy request #13 để capture payment');",
+              "console.log('');",
+              "console.log('💡 paypalOrderId hiện tại:', pm.environment.get(\"paypalOrderId\"));",
+              "console.log('==========================================================');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "about:blank",
+          "raw": "about:blank"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13. CAPTURE PAYPAL PAYMENT (Confirm & Mark Order PAID)",
       "event": [
         {
           "listen": "test",
@@ -599,44 +535,89 @@
             "exec": [
               "if (pm.response.code === 200) {",
               "    var jsonData = pm.response.json();",
-              "    console.log('========== ORDER PAID ==========');",
-              "    console.log('✓ Order ID:', jsonData.id);",
-              "    console.log('✓ Status changed: PENDING → PAID');",
-              "    console.log('✓ Total Price:', jsonData.totalPrice);",
-              "    console.log('📝 Next step: Confirm order');",
-              "    console.log('==================================');",
+              "    console.log('========== PAYMENT CAPTURE RESULT ==========');",
+              "    console.log('✓ Success:', jsonData.success);",
+              "    console.log('✓ PayPal Status:', jsonData.paypalStatus);",
+              "    console.log('✓ Order ID:', jsonData.orderId);",
+              "    console.log('');",
+              "    if (jsonData.paypalStatus === 'COMPLETED' && jsonData.success === true) {",
+              "        console.log('✅ THANH TOÁN THÀNH CÔNG!');",
+              "        console.log('✅ Order tự động cập nhật: PENDING → PAID');",
+              "        console.log('✅ Kho hàng đã được trừ');",
+              "        console.log('');",
+              "        console.log('⏩ Next: Chạy #14 để xem lịch sử thanh toán');",
+              "        console.log('⏩ Hoặc chạy #16 để xem chi tiết order');",
+              "    } else {",
+              "        console.log('❌ THANH TOÁN THẤT BẠI - Status: ' + jsonData.paypalStatus);",
+              "        console.log('❌ Order tự động HỦY và hoàn kho');",
+              "    }",
+              "    console.log('============================================');",
               "} else {",
-              "    console.log('✗ Update status failed:', pm.response.text());",
+              "    console.log('✗ Capture failed:', pm.response.text());",
               "}"
             ]
           }
         }
       ],
       "request": {
-        "method": "PATCH",
+        "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/orders/{{orderId}}/payment-confirmed",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "{{orderId}}",
-            "payment-confirmed"
-          ]
+          "raw": "{{baseUrl}}/api/payments/paypal/confirm?paypalOrderId={{paypalOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "paypal", "confirm"],
+          "query": [{ "key": "paypalOrderId", "value": "{{paypalOrderId}}" }]
         }
       },
       "response": []
     },
     {
-      "name": "13. CONFIRM ORDER (PAID → CONFIRMED)",
+      "name": "14. GET PAYMENT HISTORY",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('========== PAYMENT HISTORY ==========');",
+              "    console.log('Total transactions:', jsonData.length);",
+              "    jsonData.forEach(function(txn, i) {",
+              "        console.log('--- Transaction ' + (i+1) + ' ---');",
+              "        console.log('  TxnRef (PayPal ID):', txn.txnRef);",
+              "        console.log('  Amount:', txn.amountFormatted);",
+              "        console.log('  Status:', txn.status, '(' + txn.statusVN + ')');",
+              "        console.log('  Provider:', txn.provider);",
+              "        console.log('  Order Info:', txn.orderInfo);",
+              "        console.log('  PayPal Order ID:', txn.paypalOrderId);",
+              "        console.log('  Capture ID:', txn.captureId);",
+              "        console.log('  Created At:', txn.createdAt);",
+              "    });",
+              "    console.log('=====================================');",
+              "} else {",
+              "    console.log('✗ Get payment history failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/history",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "history"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "15. CONFIRM ORDER (PAID → CONFIRMED)",
       "event": [
         {
           "listen": "test",
@@ -646,8 +627,10 @@
               "    var jsonData = pm.response.json();",
               "    console.log('========== ORDER CONFIRMED ==========');",
               "    console.log('✓ Order ID:', jsonData.id);",
-              "    console.log('✓ Status changed: PAID → CONFIRMED');",
-              "    console.log('✓ Order is now ready to be prepared');",
+              "    console.log('✓ Status:', jsonData.status);",
+              "    if (jsonData.status === 'CONFIRMED') {",
+              "        console.log('✅ Order đã CONFIRMED - hệ thống sẽ tự chuẩn bị');",
+              "    }",
               "    console.log('======================================');",
               "} else {",
               "    console.log('✗ Confirm order failed:', pm.response.text());",
@@ -659,28 +642,18 @@
       "request": {
         "method": "PATCH",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/orders/{{orderId}}/confirm",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "{{orderId}}",
-            "confirm"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}", "confirm"]
         }
       },
       "response": []
     },
     {
-      "name": "14. GET ORDER DETAILS",
+      "name": "16. GET ORDER DETAILS",
       "event": [
         {
           "listen": "test",
@@ -690,16 +663,16 @@
               "    var jsonData = pm.response.json();",
               "    console.log('========== ORDER DETAILS ==========');",
               "    console.log('Order ID:', jsonData.id);",
-              "    console.log('User ID:', jsonData.userId);",
               "    console.log('Status:', jsonData.status);",
               "    console.log('Total Price:', jsonData.totalPrice);",
               "    console.log('Address:', jsonData.address);",
               "    console.log('Notes:', jsonData.notes);",
               "    console.log('Created At:', jsonData.createdAt);",
+              "    console.log('Updated At:', jsonData.updatedAt);",
               "    console.log('\\n--- Items ---');",
-              "    jsonData.items.forEach((item, index) => {",
-              "        console.log(`${index + 1}. ${item.productName} (${item.productType})`);",
-              "        console.log(`   Qty: ${item.quantity}, Price per unit: ${item.priceAtTime}`);",
+              "    jsonData.items.forEach(function(item, i) {",
+              "        console.log((i+1) + '. ' + item.productName + ' (' + item.productType + ')');",
+              "        console.log('   Qty: ' + item.quantity + ' | Price: ' + item.priceAtTime);",
               "    });",
               "    console.log('====================================');",
               "} else {",
@@ -712,27 +685,18 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/orders/{{orderId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "{{orderId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}"]
         }
       },
       "response": []
     },
     {
-      "name": "15. GET USER ORDERS (PAGINATED)",
+      "name": "17. GET USER ORDERS (PAGINATED)",
       "event": [
         {
           "listen": "test",
@@ -743,10 +707,8 @@
               "    console.log('========== USER ORDERS ==========');",
               "    console.log('Page:', jsonData.pageNumber, 'of', jsonData.totalPages);",
               "    console.log('Total Orders:', jsonData.totalRecords);",
-              "    console.log('Items on this page:', jsonData.data.length);",
-              "    console.log('\\n--- Orders ---');",
-              "    jsonData.data.forEach((order, index) => {",
-              "        console.log(`${index + 1}. Order ID: ${order.id}, Status: ${order.status}, Total: ${order.totalPrice}`);",
+              "    jsonData.data.forEach(function(order, i) {",
+              "        console.log((i+1) + '. Order ID:', order.id, '| Status:', order.status, '| Total:', order.totalPrice);",
               "    });",
               "    console.log('==================================');",
               "} else {",
@@ -759,149 +721,131 @@
       "request": {
         "method": "GET",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/orders/paging?page=1&size=10",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "paging"
-          ],
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "paging"],
           "query": [
-            {
-              "key": "page",
-              "value": "1"
-            },
-            {
-              "key": "size",
-              "value": "10"
-            }
+            { "key": "page", "value": "1" },
+            { "key": "size", "value": "10" }
           ]
         }
       },
       "response": []
     },
     {
-      "name": "16. CANCEL ORDER",
+      "name": "18. GET PAYMENT DETAIL (by txnRef)",
       "event": [
         {
           "listen": "test",
-          "script": [
-            "if (pm.response.code === 200) {",
-            "    var jsonData = pm.response.json();",
-            "    console.log('✓ Order cancelled successfully');",
-            "    console.log('✓ New Status:', jsonData.status);",
-            "} else {",
-            "    console.log('✗ Cancel order failed:', pm.response.text());",
-            "}"
-          ]
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('========== PAYMENT DETAIL ==========');",
+              "    console.log('TxnRef:', jsonData.txnRef);",
+              "    console.log('Amount:', jsonData.amountFormatted);",
+              "    console.log('Status:', jsonData.status, '(' + jsonData.statusVN + ')');",
+              "    console.log('PayPal Order ID:', jsonData.paypalOrderId);",
+              "    console.log('Payer ID:', jsonData.payerId);",
+              "    console.log('Capture ID:', jsonData.captureId);",
+              "    console.log('Response Code:', jsonData.responseCode);",
+              "    console.log('====================================');",
+              "} else if (pm.response.code === 404) {",
+              "    console.log('⚠ Transaction not found or not yours');",
+              "} else {",
+              "    console.log('✗ Get payment detail failed:', pm.response.text());",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/payments/history/{{paypalOrderId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "payments", "history", "{{paypalOrderId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "19. CANCEL ORDER (Nếu chưa DELIVERING/DELIVERED)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    console.log('✓ Order cancelled successfully');",
+              "    console.log('✓ New Status:', jsonData.status);",
+              "    console.log('✓ Kho hàng đã được hoàn lại');",
+              "} else {",
+              "    console.log('✗ Cancel order failed:', pm.response.text());",
+              "}"
+            ]
+          }
         }
       ],
       "request": {
         "method": "DELETE",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/orders/{{orderId}}",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "orders",
-            "{{orderId}}"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "orders", "{{orderId}}"]
         }
       },
       "response": []
     },
     {
-      "name": "17. CLEAR CART (OPTIONAL)",
+      "name": "20. CLEAR CART (Optional)",
       "event": [
         {
           "listen": "test",
-          "script": [
-            "if (pm.response.code === 200) {",
-            "    console.log('✓ Cart cleared successfully');",
-            "} else {",
-            "    console.log('✗ Clear cart failed:', pm.response.text());",
-            "}"
-          ]
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    console.log('✓ Cart cleared successfully');",
+              "} else {",
+              "    console.log('✗ Clear cart failed:', pm.response.text());",
+              "}"
+            ]
+          }
         }
       ],
       "request": {
         "method": "DELETE",
         "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{token}}"
-          }
+          { "key": "Authorization", "value": "Bearer {{token}}" }
         ],
         "url": {
           "raw": "{{baseUrl}}/api/carts",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "carts"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "carts"]
         }
       },
       "response": []
     }
   ],
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:8080",
-      "type": "string"
-    },
-    {
-      "key": "token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "userId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "cartId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "cartItemId1",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "cartItemId2",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "orderId",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "addressType",
-      "value": "HOME",
-      "type": "string"
-    }
+    { "key": "baseUrl",      "value": "http://localhost:8080", "type": "string" },
+    { "key": "token",        "value": "", "type": "string" },
+    { "key": "userId",       "value": "", "type": "string" },
+    { "key": "cartId",       "value": "", "type": "string" },
+    { "key": "cartItemId1",  "value": "", "type": "string" },
+    { "key": "cartItemId2",  "value": "", "type": "string" },
+    { "key": "orderId",      "value": "", "type": "string" },
+    { "key": "addressType",  "value": "HOME", "type": "string" },
+    { "key": "paypalOrderId","value": "", "type": "string" }
   ]
 }
