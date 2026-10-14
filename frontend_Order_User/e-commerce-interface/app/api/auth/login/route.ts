@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
         httpOnly: true,      // 🔒 JS không thể truy cập
         secure: false,       // 🔧 DEV: localhost HTTP không HTTPS, nên false
         sameSite: 'lax',
-        maxAge: 7 * 24 * 3600, // 7 days
+        maxAge: 30 * 24 * 3600, // 30 ngày — Tầng 1: Sliding Session (khớp với backend JWT 25 ngày)
         path: '/',
       })
     }

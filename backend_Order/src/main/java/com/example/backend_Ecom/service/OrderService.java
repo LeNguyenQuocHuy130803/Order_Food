@@ -17,7 +17,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,10 +31,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CartRepository cartRepository;
     private final UserJpaRepository userRepository;
-    private final FoodRepository foodRepository;
-    private final DrinkRepository drinkRepository;
-    private final DessertRepository dessertRepository;
-    private final FreshRepository freshRepository;
+    private final ProductRepository productRepository;
 
     /**
      * Tạo order từ giỏ hàng (checkout)
@@ -95,17 +95,41 @@ public class OrderService {
                 "No address found. Please provide either addressType or inline address");
         }
 
+        // Lọc cart items theo request.getCartItemIds() nếu được cung cấp
+        List<CartItem> itemsToCheckout;
+        if (request.getCartItemIds() != null && !request.getCartItemIds().isEmpty()) {
+            Set<Long> selectedIds = new HashSet<>(request.getCartItemIds());
+            itemsToCheckout = cart.getItems().stream()
+                    .filter(item -> selectedIds.contains(item.getId()))
+                    .collect(Collectors.toList());
+            if (itemsToCheckout.isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_REQUEST, "None of the selected cart items were found in your cart");
+            }
+        } else {
+            itemsToCheckout = new java.util.ArrayList<>(cart.getItems());
+        }
+
+        // Tính tổng tiền dựa trên các sản phẩm được checkout
+        BigDecimal orderTotalPrice = itemsToCheckout.stream()
+                .map(item -> item.getPriceAtTime().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        String paymentMethod = (request.getPaymentMethod() != null && !request.getPaymentMethod().trim().isEmpty())
+                ? request.getPaymentMethod().trim().toUpperCase()
+                : "CASH";
+
         // Tạo Order
         Order order = Order.builder()
                 .user(user)
-                .totalPrice(cart.getTotalPrice())
+                .totalPrice(orderTotalPrice)
                 .status(OrderStatus.PENDING)
+                .paymentMethod(paymentMethod)
                 .address(addressString)
                 .notes(request.getNotes())
                 .build();
 
-        // Tạo order items từ cart items
-        List<OrderItem> orderItems = cart.getItems().stream()
+        // Tạo order items từ itemsToCheckout
+        List<OrderItem> orderItems = itemsToCheckout.stream()
                 .map(cartItem -> OrderItem.builder()
                         .order(order)
                         .productType(cartItem.getProductType())
@@ -139,12 +163,20 @@ public class OrderService {
         log.info("✓ Order created (PENDING): ID={}, User={}, Address={}, Total={} VND",
             savedOrder.getId(), userId, addressString, savedOrder.getTotalPrice());
 
-        // Xóa giỏ hàng sau khi checkout thành công
-        cart.getItems().clear();
-        cart.setTotalPrice(java.math.BigDecimal.ZERO);
+        // Xóa CHỈ các item đã checkout khỏi giỏ hàng
+        Set<Long> checkedOutItemIds = itemsToCheckout.stream()
+                .map(CartItem::getId)
+                .collect(Collectors.toSet());
+        cart.getItems().removeIf(item -> checkedOutItemIds.contains(item.getId()));
+
+        BigDecimal remainingCartTotal = cart.getItems().stream()
+                .map(item -> item.getPriceAtTime().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        cart.setTotalPrice(remainingCartTotal);
         cartRepository.save(cart);
 
-        log.info("✓ Order created & inventory reserved. Waiting for payment: ID={}", savedOrder.getId());
+        log.info("✓ Order created & inventory reserved. Waiting for payment: ID={}, remaining cart items={}",
+            savedOrder.getId(), cart.getItems().size());
 
         return mapToDto(savedOrder);
     }
@@ -166,12 +198,14 @@ public class OrderService {
     /**
      * Lấy tất cả orders của user (phân trang)
      */
-    public PaginatedOrderResponseDto getUserOrders(Long userId, int page, int size) {
+    public PaginatedOrderResponseDto getUserOrders(Long userId, OrderStatus status, int page, int size) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "User not found"));
 
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Order> orderPage = orderRepository.findByUserId(userId, pageable);
+        Page<Order> orderPage = (status != null)
+                ? orderRepository.findByUserIdAndStatus(userId, status, pageable)
+                : orderRepository.findByUserId(userId, pageable);
 
         List<OrderResponseDto> orderDtos = orderPage.getContent().stream()
                 .map(this::mapToDto)
@@ -186,6 +220,10 @@ public class OrderService {
                 .hasNext(orderPage.hasNext())
                 .hasPrevious(orderPage.hasPrevious())
                 .build();
+    }
+
+    public PaginatedOrderResponseDto getUserOrders(Long userId, int page, int size) {
+        return getUserOrders(userId, null, page, size);
     }
 
     /**
@@ -214,6 +252,7 @@ public class OrderService {
      * Cập nhật status của order (admin)
      * ✅ Validate state transition — chỉ cho phép chuyển sang status hợp lệ
      */
+    @Transactional
     public OrderResponseDto updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Order not found"));
@@ -358,9 +397,12 @@ public class OrderService {
             return mapToDto(order);
         }
 
-        if (order.getStatus() != OrderStatus.PAID) {
+        // Cho phép confirm nếu PAID hoặc nếu là đơn COD (PENDING)
+        boolean isCod = order.getPaymentMethod() != null &&
+                (order.getPaymentMethod().equalsIgnoreCase("CASH") || order.getPaymentMethod().equalsIgnoreCase("COD"));
+        if (order.getStatus() != OrderStatus.PAID && !(isCod && order.getStatus() == OrderStatus.PENDING)) {
             throw new AppException(ErrorCode.INVALID_REQUEST,
-                "Cannot confirm order. Current status: " + order.getStatus() + " (must be PAID or CONFIRMED)");
+                "Cannot confirm order. Current status: " + order.getStatus() + " (must be PAID, or PENDING for COD)");
         }
 
         order.setStatus(OrderStatus.CONFIRMED);
@@ -382,6 +424,7 @@ public class OrderService {
                 .userId(order.getUser().getId())
                 .totalPrice(order.getTotalPrice())
                 .status(order.getStatus())
+                .paymentMethod(order.getPaymentMethod())
                 .address(order.getAddress())
                 .notes(order.getNotes())
                 .items(items)
@@ -410,17 +453,11 @@ public class OrderService {
      */
     private void decreaseProductQuantity(ProductType productType, Long productId,
                                          Integer quantityToPurchase, String productName) {
-        int affectedRows = switch (productType) {
-            case FOOD    -> foodRepository.decreaseStockIfAvailable(productId, quantityToPurchase);
-            case DRINK   -> drinkRepository.decreaseStockIfAvailable(productId, quantityToPurchase);
-            case DESSERT -> dessertRepository.decreaseStockIfAvailable(productId, quantityToPurchase);
-            case FRESH   -> freshRepository.decreaseStockIfAvailable(productId, quantityToPurchase);
-            default      -> throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type: " + productType);
-        };
+        int affectedRows = productRepository.decreaseStockIfAvailable(productId, quantityToPurchase);
 
         if (affectedRows == 0) {
             throw new AppException(ErrorCode.INVALID_REQUEST,
-                "Out of stock for " + productType + ": '" + productName + "'. Requested: " + quantityToPurchase);
+                "Out of stock for '" + productName + "'. Requested: " + quantityToPurchase);
         }
 
         log.info("✅ Inventory decreased: {} '{}' sold: {}", productType, productName, quantityToPurchase);
@@ -432,13 +469,7 @@ public class OrderService {
      */
     private void restoreProductQuantity(ProductType productType, Long productId,
                                         Integer quantityToRestore, String productName) {
-        int affectedRows = switch (productType) {
-            case FOOD    -> foodRepository.increaseStock(productId, quantityToRestore);
-            case DRINK   -> drinkRepository.increaseStock(productId, quantityToRestore);
-            case DESSERT -> dessertRepository.increaseStock(productId, quantityToRestore);
-            case FRESH   -> freshRepository.increaseStock(productId, quantityToRestore);
-            default      -> throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type: " + productType);
-        };
+        int affectedRows = productRepository.increaseStock(productId, quantityToRestore);
 
         if (affectedRows > 0) {
             log.info("✅ Inventory restored: {} '{}' quantity += {}", productType, productName, quantityToRestore);

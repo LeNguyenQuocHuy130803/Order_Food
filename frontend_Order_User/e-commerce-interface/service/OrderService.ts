@@ -4,7 +4,7 @@
  */
 
 import { apiFetch } from '@/lib/api/api-client-refresh'
-import { CreateOrderRequest, CreateOrderResponse, CreatePaymentResponse, Order, GetOrdersResponse } from '@/types/order'
+import { CreateOrderRequest, CreateOrderResponse, Order, GetOrdersResponse } from '@/types/order'
 
 /**
  * 📦 Tạo đơn hàng
@@ -44,68 +44,35 @@ async function createOrder(request: CreateOrderRequest): Promise<CreateOrderResp
 }
 
 /**
- * 💳 Tạo payment PayPal
- * POST /api/payments/paypal/create-payment
- */
-async function createPayPalPayment(orderId: number): Promise<CreatePaymentResponse> {
-  try {
-    console.log(`💳 [OrderService] Creating PayPal payment for order:`, orderId)
-
-    const res = await apiFetch(`/api/payments/paypal/create-payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ orderId }),
-    })
-
-    if (!res.ok) {
-      const errorData = await res.json()
-      throw new Error(errorData.message || 'Failed to create payment')
-    }
-
-    const payment = (await res.json()) as CreatePaymentResponse
-
-    console.log(`✅ [OrderService] PayPal payment created:`, {
-      orderId: payment.orderId,
-      approveUrl: payment.approveUrl?.substring(0, 50) + '...',
-    })
-
-    return payment
-  } catch (error: unknown) {
-    const errorMsg = (error as Error).message || 'Failed to create payment'
-    console.error(`❌ [OrderService] Create payment failed:`, errorMsg)
-    throw new Error(errorMsg)
-  }
-}
-
-/**
  * 📋 Lấy danh sách đơn hàng của người dùng
- * GET /api/orders
+ * GET /api/orders?page={page}&size={size}
  */
-async function getOrders(status?: string): Promise<Order[]> {
+async function getOrders(status?: string, page: number = 1, size: number = 50): Promise<Order[]> {
   try {
-    console.log(`📋 [OrderService] Fetching orders...`, { status })
+    console.log(`📋 [OrderService] Fetching orders...`, { status, page, size })
 
-    const url = status ? `/api/orders?status=${status}` : '/api/orders'
+    let url = `/api/orders?page=${page}&size=${size}`
+    if (status && status !== 'ALL') {
+      url += `&status=${encodeURIComponent(status)}`
+    }
 
     const res = await apiFetch(url, {
       method: 'GET',
     })
 
     if (!res.ok) {
-      const errorData = await res.json()
+      const errorData = await res.json().catch(() => ({}))
       throw new Error(errorData.message || 'Failed to fetch orders')
     }
 
     const response = (await res.json()) as GetOrdersResponse
 
     console.log(`✅ [OrderService] Orders fetched:`, {
-      total: response.total,
-      count: response.data.length,
+      total: response.totalRecords ?? response.total,
+      count: response.data?.length,
     })
 
-    return response.data
+    return response.data || []
   } catch (error: unknown) {
     const errorMsg = (error as Error).message || 'Failed to fetch orders'
     console.error(`❌ [OrderService] Fetch orders failed:`, errorMsg)
@@ -145,9 +112,42 @@ async function getOrderDetail(orderId: number): Promise<Order> {
   }
 }
 
+/**
+ * ❌ Hủy đơn hàng & hoàn kho tức thì
+ * DELETE /api/orders/:id
+ * Gọi khi user cancel thanh toán PayPal hoặc tự hủy đơn
+ */
+async function cancelOrder(orderId: number): Promise<Order> {
+  try {
+    console.log(`❌ [OrderService] Cancelling order & restoring stock:`, orderId)
+
+    const res = await apiFetch(`/api/orders/${orderId}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(errorData.message || 'Failed to cancel order')
+    }
+
+    const order = (await res.json()) as Order
+
+    console.log(`✅ [OrderService] Order cancelled & stock restored:`, {
+      orderId: order.id,
+      status: order.status,
+    })
+
+    return order
+  } catch (error: unknown) {
+    const errorMsg = (error as Error).message || 'Failed to cancel order'
+    console.error(`❌ [OrderService] Cancel order failed:`, errorMsg)
+    throw new Error(errorMsg)
+  }
+}
+
 export const OrderService = {
   createOrder,
-  createPayPalPayment,
   getOrders,
   getOrderDetail,
+  cancelOrder,
 }

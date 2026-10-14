@@ -76,8 +76,11 @@ public class UserController {
     public ResponseEntity<UserResponseDto> updateUser(
             @PathVariable Long id,
             @AuthenticationPrincipal UserPrincipal principal,
-            @ModelAttribute UserUpdateRequestDto request) {
-        
+            @ModelAttribute UserUpdateRequestDto request,
+            @RequestParam(value = "avatar", required = false) org.springframework.web.multipart.MultipartFile avatar) {
+        if (avatar != null && !avatar.isEmpty()) {
+            request.setAvatar(avatar);
+        }
         UserResponseDto updatedUser = userService.updateUser(id, request, principal);
         return ResponseEntity.ok(updatedUser);
     }

@@ -309,7 +309,7 @@ export default function AboutPage() {
                 <h2 className="text-4xl md:text-6xl font-black text-white uppercase tracking-tighter leading-none">Delivering <br /> Happiness</h2>
               </div>
               <p className="text-gray-400 font-medium leading-relaxed italic">
-                "Chúng tôi tin rằng món ăn ngon có sức mạnh kết nối mọi người lại với nhau. Sứ mệnh của FoodKing là mang niềm vui đến từng bàn ăn."
+                &quot;Chúng tôi tin rằng món ăn ngon có sức mạnh kết nối mọi người lại với nhau. Sứ mệnh của FoodKing là mang niềm vui đến từng bàn ăn.&quot;
               </p>
               <ul className="space-y-5">
                 {MISSION_POINTS.map((item, index) => (

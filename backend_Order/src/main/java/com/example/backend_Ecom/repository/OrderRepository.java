@@ -18,8 +18,8 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
     // Lấy orders của user với pagination
     Page<Order> findByUserId(Long userId, Pageable pageable);
 
-    // 🔥 Lấy orders theo status và updated time (để transition dựa trên thời gian cập nhật status - CHÍNH XÁC)
-    List<Order> findByStatusAndUpdatedAtBefore(OrderStatus status, LocalDateTime updatedAt);
+    // Lấy orders của user có lọc theo status với pagination
+    Page<Order> findByUserIdAndStatus(Long userId, OrderStatus status, Pageable pageable);
 
     // Lấy orders theo status và created time (dùng cho scheduler fallback)
     List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, LocalDateTime createdAt);

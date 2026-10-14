@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion"; // ✅ Đã thêm Framer Motion
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Fresh } from "@/types/fresh";
-import { FreshService } from "@/service/FreshService";
+import type { Product } from "@/service/ProductService";
+import { ProductService } from "@/service/ProductService";
 import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
@@ -34,9 +34,9 @@ export default function FreshDetailPage() {
     data: fresh, 
     isLoading, 
     error 
-  } = useQuery<Fresh, Error>({
+  } = useQuery<Product, Error>({
     queryKey: ["fresh", freshId],
-    queryFn: () => FreshService.getFreshById(freshId),
+    queryFn: () => ProductService.getProductById(freshId),
     enabled: isValidFreshId,
   });
 
@@ -126,7 +126,7 @@ export default function FreshDetailPage() {
           >
             <div className="relative aspect-square w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-50 group">
               <Image
-                src={fresh.imageUrl}
+                src={fresh.imageUrl || "/image/placeholder.jpg"}
                 alt={fresh.name}
                 fill
                 priority

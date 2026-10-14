@@ -2,12 +2,12 @@
 
 import ProductCard from '@/app/components/product_page_ffdd/product-card';
 import { ProductCardSkeleton } from '@/app/components/product_page_ffdd/product-card-skeleton';
-import type { Drink } from '@/types/drink';
+import type { Product } from '@/service/ProductService';
 
 interface ResultsDisplayProps {
   loading: boolean;
   error: string | null;
-  results: Drink[];
+  results: Product[];
   resultCount?: string; // Ví dụ: "Tìm thấy 5 kết quả"
   emptyMessage?: string;
   showPagination?: boolean; // Nếu có pagination thì parent truyền vào

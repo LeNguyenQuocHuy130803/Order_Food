@@ -8,7 +8,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "payment_transactions")
+@Table(
+    name = "payment_transactions",
+    indexes = {
+        @Index(name = "idx_payment_user_id", columnList = "userId"),
+        @Index(name = "idx_payment_order_id", columnList = "order_id")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -25,6 +31,9 @@ public class PaymentTransaction {
 
     @Column(nullable = false)
     private Long userId;
+
+    @Column(name = "order_id")
+    private Long orderId; // Ràng buộc payment với Order
 
     @Column(nullable = false)
     private Long amount; // Số tiền (VND)

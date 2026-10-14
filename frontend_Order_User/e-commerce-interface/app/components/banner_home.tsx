@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock, Shield, Truck } from "lucide-react";
-import { motion, Variants, TargetAndTransition } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
 // 1. Định nghĩa kịch bản xuất hiện (Staggered Entrance)
 const containerVariants: Variants = {

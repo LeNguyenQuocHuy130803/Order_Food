@@ -14,7 +14,8 @@ export interface UserDetail {
   id: number
   userName: string
   email: string
-  roles: string[]
+  role?: string
+  roles?: string[]
   avatar?: string
   phoneNumber?: string
   addresses?: Array<{

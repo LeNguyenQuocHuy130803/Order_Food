@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
@@ -21,66 +22,43 @@ public class EmailService {
 
     @Value("${app.mail.from:noreply@foodfresh.com}")
     private String fromEmail;
-
     /**
-     * Send verification email with OTP to user
+     * Send OTP email for change password verification
      * @param email User email
      * @param otp 6-digit OTP code
      */
-    public void sendVerificationEmail(String email, String otp) {
+    @Async
+    public void sendChangePasswordOtpEmail(String email, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(email);
-            message.setSubject("Mã xác minh email - Food Fresh");
+            message.setSubject("Mã xác nhận đổi mật khẩu - Food Fresh");
             message.setText(
                 "Chào bạn!\n\n" +
-                "Mã OTP của bạn là: " + otp + "\n\n" +
-                "Mã này sẽ hết hạn trong 10 phút.\n\n" +
-                "Nếu bạn không yêu cầu xác minh email này, vui lòng bỏ qua email này.\n\n" +
+                "Bạn đã yêu cầu đổi mật khẩu tài khoản.\n\n" +
+                "Mã OTP xác nhận: " + otp + "\n\n" +
+                "Mã này sẽ hết hạn trong 5 phút.\n\n" +
+                "Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bảo mật tài khoản của bạn ngay.\n\n" +
                 "Trân trọng,\n" +
                 "Food Fresh Team"
             );
 
             javaMailSender.send(message);
-            log.info("✓ Verification email sent to: {}", email);
+            log.info("✓ Change password OTP email sent to: {}", email);
         } catch (Exception e) {
-            log.error("✗ Failed to send verification email to {}: {}", email, e.getMessage());
-            throw new AppException(ErrorCode.APP_EXCEPTION, "Failed to send verification email");
+            log.error("✗ Failed to send change password OTP email to {}: {}", email, e.getMessage());
+            throw new AppException(ErrorCode.APP_EXCEPTION, "Failed to send OTP email");
         }
     }
 
-    /**
-     * Send email verification success confirmation
-     * @param email User email
-     */
-    public void sendVerificationSuccessEmail(String email) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(email);
-            message.setSubject("Email đã được xác minh - Food Fresh");
-            message.setText(
-                "Chào bạn!\n\n" +
-                "Chúc mừng! Email của bạn đã được xác minh thành công.\n\n" +
-                "Bây giờ bạn có thể đăng nhập và bắt đầu mua sắm.\n\n" +
-                "Trân trọng,\n" +
-                "Food Fresh Team"
-            );
-
-            javaMailSender.send(message);
-            log.info("✓ Verification success email sent to: {}", email);
-        } catch (Exception e) {
-            log.error("✗ Failed to send success email to {}: {}", email, e.getMessage());
-            // Don't throw exception here - verification already succeeded
-        }
-    }
 
     /**
      * Send password reset email with OTP
      * @param email User email
      * @param otp 6-digit OTP code
      */
+    @Async
     public void sendPasswordResetEmail(String email, String otp) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -109,6 +87,7 @@ public class EmailService {
      * Send password reset success confirmation email
      * @param email User email
      */
+    @Async
     public void sendPasswordResetSuccessEmail(String email) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();

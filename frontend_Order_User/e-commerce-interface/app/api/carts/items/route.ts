@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * ✅ CORS tự động giải quyết (same-origin)
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 
 /**
  * POST /api/carts/items - Thêm sản phẩm vào giỏ hàng
@@ -139,17 +139,18 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    // 2️⃣ Forward tới backend: PATCH /carts/items/{cartItemId}?quantity={quantity}
-    console.log(`🚀 [/api/carts/items] Calling backend: ${API_URL}/carts/items/${cartItemId}?quantity=${quantity}`)
+    // 2️⃣ Forward tới backend: PATCH /carts/items/{cartItemId} with body { quantity }
+    console.log(`🚀 [/api/carts/items] Calling backend: ${API_URL}/carts/items/${cartItemId} with quantity=${quantity}`)
 
     const backendRes = await fetch(
-      `${API_URL}/carts/items/${cartItemId}?quantity=${quantity}`,
+      `${API_URL}/carts/items/${cartItemId}`,
       {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ quantity: Number(quantity) }),
       }
     )
 

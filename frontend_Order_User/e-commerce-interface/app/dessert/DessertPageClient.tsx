@@ -9,7 +9,7 @@ import { ProductHeader } from '@/app/components/layout/product-header'
 import { Footer } from '@/app/components/layout/footer'
 import { HeroBanner } from '@/app/components/banner_products'
 import { useDessertQuery } from '@/hooks/useDessertQuery'
-import type { FilterParams } from '@/types/drink'
+import type { FilterParams } from '@/types/product'
 
 const DEFAULT_PAGE = 1
 const DEFAULT_PAGE_SIZE = 9

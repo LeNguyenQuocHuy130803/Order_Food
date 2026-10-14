@@ -42,7 +42,7 @@ public class User {
     @Builder.Default
     private List<Role> roles = new ArrayList<>();
 
-    @Column(name = "phone_number", nullable = false, unique = true)
+    @Column(name = "phone_number", nullable = true, unique = true)
     private String phoneNumber;
 
     @CreationTimestamp
@@ -72,7 +72,7 @@ public class User {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean emailVerified = false;
+    private Boolean emailVerified = true;
 
     @Column(name = "last_login")
     private LocalDateTime lastLogin;

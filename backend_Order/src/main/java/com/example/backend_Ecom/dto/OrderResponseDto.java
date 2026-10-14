@@ -22,6 +22,8 @@ public class OrderResponseDto {
 
     private OrderStatus status;
 
+    private String paymentMethod;
+
     private String address;
 
     private String notes;

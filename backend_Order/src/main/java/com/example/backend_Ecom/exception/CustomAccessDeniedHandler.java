@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Component
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     @Override
     public void handle(HttpServletRequest request, HttpServletResponse response,

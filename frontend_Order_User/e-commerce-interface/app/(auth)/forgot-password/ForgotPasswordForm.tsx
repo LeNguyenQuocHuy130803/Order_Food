@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, ArrowLeft, Mail, Lock, Key, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, ArrowLeft, Mail, Lock, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { handle_forgotPassWord, resetPassword } from '@/service/userService'
 import { useRouter } from 'next/navigation'
@@ -29,7 +29,7 @@ export function ForgotPasswordForm({ onSuccess }: { onSuccess?: (msg: string) =>
   const [showPassword, setShowPassword] = useState(false)
   const [resendCountdown, setResendCountdown] = useState(0)
 
-  const { register, handleSubmit, watch, trigger, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: { email: '', otp: '', newPassword: '', confirmPassword: '' }
   })
@@ -60,8 +60,8 @@ export function ForgotPasswordForm({ onSuccess }: { onSuccess?: (msg: string) =>
         onSuccess?.('Thành công!')
         setTimeout(() => router.push('/login-page'), 2000)
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại')
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Có lỗi xảy ra, vui lòng thử lại')
     } finally {
       setIsLoading(false)
     }
@@ -94,7 +94,7 @@ export function ForgotPasswordForm({ onSuccess }: { onSuccess?: (msg: string) =>
               <div className="space-y-2">
                 <input {...register('otp')} type="text" maxLength={6} placeholder="OTP" className="w-full py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:border-[#ff5528] focus:bg-white outline-none font-black text-3xl text-center tracking-[0.5em]" />
                 <div className="text-center">
-                   {resendCountdown > 0 ? <span className="text-[10px] text-gray-400 font-bold uppercase">Gửi lại sau {resendCountdown}s</span> : <button type="button" onClick={() => onSubmit({ email: currentEmail } as any)} className="text-[#ff5528] font-black text-[10px] uppercase hover:underline">Gửi lại mã</button>}
+                   {resendCountdown > 0 ? <span className="text-[10px] text-gray-400 font-bold uppercase">Gửi lại sau {resendCountdown}s</span> : <button type="button" onClick={() => onSubmit({ email: currentEmail, otp: '', newPassword: '', confirmPassword: '' })} className="text-[#ff5528] font-black text-[10px] uppercase hover:underline">Gửi lại mã</button>}
                 </div>
                 {errors.otp && <p className="text-red-500 text-xs font-bold text-center">{errors.otp.message}</p>}
               </div>

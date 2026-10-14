@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Food } from "@/types/food";
-import { FoodService } from "@/service/FoodService";
+import type { Product } from "@/service/ProductService";
+import { ProductService } from "@/service/ProductService";
 import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
@@ -27,9 +27,9 @@ export default function FoodDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isFavorited, setIsFavorited] = useState(false);
 
-  const { data: food, isLoading, error } = useQuery<Food, Error>({
+  const { data: food, isLoading, error } = useQuery<Product, Error>({
     queryKey: ["food", foodId],
-    queryFn: () => FoodService.getFoodById(foodId),
+    queryFn: () => ProductService.getProductById(foodId),
     enabled: isValidFoodId,
   });
 
@@ -87,7 +87,7 @@ export default function FoodDetailPage() {
           >
             <div className="relative aspect-square w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-50 group">
               <Image
-                src={food.imageUrl}
+                src={food.imageUrl || "/image/placeholder.jpg"}
                 alt={food.name}
                 fill
                 priority

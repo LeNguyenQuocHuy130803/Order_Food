@@ -65,3 +65,60 @@ export async function GET(
     )
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await props.params
+    const userId = id
+    console.log(`🔍 [PATCH /api/users/${userId}] Proxying update request...`)
+
+    const token = request.cookies.get('accessToken')?.value
+    
+    if (!token) {
+      console.error('❌ [PATCH /api/users] No token found in cookies')
+      return NextResponse.json(
+        { message: 'Unauthorized - No token provided' },
+        { status: 401 }
+      )
+    }
+
+    // Forward the headers, especially Content-Type which includes the multipart boundary
+    const headers = new Headers()
+    headers.set('Authorization', `Bearer ${token}`)
+    
+    const contentType = request.headers.get('content-type')
+    if (contentType) {
+      headers.set('Content-Type', contentType)
+    }
+
+    // Proxy the request body stream directly
+    const response = await fetch(`${API_URL}/users/${userId}`, {
+      method: 'PATCH',
+      headers: headers,
+      body: request.body,
+      // @ts-expect-error Node's fetch supports duplex while RequestInit does not include it yet.
+      duplex: 'half'
+    })
+
+    console.log(`📡 [PATCH /api/users/${userId}] Backend response status: ${response.status}`)
+
+    if (!response.ok) {
+      const error = await response.json()
+      console.error(`❌ [PATCH /api/users/${userId}] Error:`, error)
+      return NextResponse.json(error, { status: response.status })
+    }
+
+    const data = await response.json()
+    console.log(`✅ [PATCH /api/users/${userId}] User updated successfully`)
+    return NextResponse.json(data)
+  } catch (error: unknown) {
+    console.error('❌ [PATCH /api/users] Exception:', (error as Error).message)
+    return NextResponse.json(
+      { message: (error as Error).message || 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

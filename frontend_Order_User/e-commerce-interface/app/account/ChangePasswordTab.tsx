@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Lock, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Lock, Loader2, KeyRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { changePassword } from '@/service/userService'
+import { changePassword, sendChangePasswordOtp } from '@/service/userService'
 import { toast } from 'sonner'
 
 const changePasswordSchema = z
@@ -22,6 +22,10 @@ const changePasswordSchema = z
       .regex(/[A-Z]/, 'Mật khẩu phải chứa ít nhất một chữ cái hoa')
       .regex(/[0-9]/, 'Mật khẩu phải chứa ít nhất một số'),
     confirmPassword: z.string().min(1, 'Vui lòng xác nhận mật khẩu mới'),
+    otp: z
+      .string()
+      .min(1, 'Mã xác thực OTP là bắt buộc')
+      .length(6, 'Mã OTP phải gồm 6 chữ số'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Mật khẩu xác nhận không khớp',
@@ -33,9 +37,19 @@ type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
 export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [isSendingOtp, setIsSendingOtp] = useState(false)
+  const [otpCountdown, setOtpCountdown] = useState(0)
   const [showOldPassword, setShowOldPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Countdown timer for resending OTP
+  useEffect(() => {
+    if (otpCountdown > 0) {
+      const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [otpCountdown])
 
   const {
     register,
@@ -48,14 +62,29 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
       oldPassword: '',
       newPassword: '',
       confirmPassword: '',
+      otp: '',
     },
   })
+
+  const handleSendOtp = async () => {
+    setIsSendingOtp(true)
+    try {
+      const res = await sendChangePasswordOtp()
+      toast.success(res.message || 'Mã OTP đã được gửi đến email của bạn!')
+      setOtpCountdown(60)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Không thể gửi mã OTP, vui lòng thử lại'
+      toast.error(message)
+    } finally {
+      setIsSendingOtp(false)
+    }
+  }
 
   const onSubmit = async (data: ChangePasswordFormData) => {
     setIsLoading(true)
 
     try {
-      const response = await changePassword(data.oldPassword, data.newPassword)
+      const response = await changePassword(data.oldPassword, data.newPassword, data.otp)
       
       // Show success toast with message from API
       toast.success(response.message || 'Đổi mật khẩu thành công')
@@ -176,6 +205,46 @@ export function ChangePasswordForm({ onSuccess }: { onSuccess?: () => void }) {
           {errors.confirmPassword && (
             <p className="ml-1 text-[10px] font-bold uppercase text-red-500">
               {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <label className="ml-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
+            <KeyRound size={12} /> Mã xác thực OTP
+          </label>
+          <div className="flex gap-2">
+            <input
+              {...register('otp')}
+              type="text"
+              maxLength={6}
+              placeholder="Nhập 6 số OTP"
+              className="w-full rounded-2xl border-2 border-black bg-gray-50/50 px-5 py-4 font-bold tracking-widest outline-none transition-all focus:border-[#ff5528] focus:bg-white"
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={handleSendOtp}
+              disabled={isSendingOtp || otpCountdown > 0 || isLoading}
+              className="shrink-0 rounded-2xl bg-black px-5 py-4 text-xs font-black uppercase tracking-wider text-white transition-all hover:bg-[#ff5528] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSendingOtp ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="animate-spin" size={14} /> Gửi...
+                </span>
+              ) : otpCountdown > 0 ? (
+                `Gửi lại (${otpCountdown}s)`
+              ) : (
+                'Gửi mã OTP'
+              )}
+            </button>
+          </div>
+          <p className="ml-1 text-[11px] text-gray-400">
+            Mã OTP gồm 6 chữ số sẽ được gửi đến email đăng ký của bạn.
+          </p>
+          {errors.otp && (
+            <p className="ml-1 text-[10px] font-bold uppercase text-red-500">
+              {errors.otp.message}
             </p>
           )}
         </div>

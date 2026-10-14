@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Component
 public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,

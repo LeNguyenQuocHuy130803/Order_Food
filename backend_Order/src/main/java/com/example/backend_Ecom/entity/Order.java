@@ -13,7 +13,13 @@ import java.util.List;
 @Getter
 @Setter
 @Entity
-@Table(name = "orders")
+@Table(
+    name = "orders",
+    indexes = {
+        @Index(name = "idx_orders_user_id", columnList = "user_id"),
+        @Index(name = "idx_orders_status", columnList = "status")
+    }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -33,6 +39,10 @@ public class Order {
     @Column(nullable = false)
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
+
+    @Column(name = "payment_method", length = 30)
+    @Builder.Default
+    private String paymentMethod = "CASH";
 
     @Column(nullable = false)
     private String address; // Full delivery address

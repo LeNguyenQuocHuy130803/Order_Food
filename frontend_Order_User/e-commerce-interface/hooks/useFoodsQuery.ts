@@ -1,54 +1,38 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FoodService } from "@/service/FoodService";
-import type { Food, PaginatedFoodResponse } from "@/types/food";
-import type { FilterParams } from "@/types/drink";
+import { ProductService, Product, PaginatedProductResponse } from "@/service/ProductService";
+import { PRODUCT_TYPES } from "@/types/cart";
+import type { FilterParams } from "@/types/product";
 
 interface UseFoodsQueryResult {
-  foods: Food[];
+  foods: Product[];
   loading: boolean;
   error: string | null;
   totalPages: number;
   isRefetching: boolean;
 }
 
-/**
- * ✨ React Query Hook - Thay thế cho useFoods
- * Tự động handle: caching, deduplication, refetch, error
- */
 export function useFoodsQuery(
-  filters: FilterParams,
+  filters: FilterParams = {},
   page: number = 1,
   pageSize: number = 9
 ): UseFoodsQueryResult {
-  
-  // Xác định query key (dùng để identify data khi có thay đổi)
   const queryKey = ["foods", { filters, page, pageSize }];
 
-  // 🎯 useQuery tự động:
-  // - Fetch data qua queryFn
-  // - Cache result với key
-  // - Dedup nếu có 2 component cần cùng data
-  // - Handle refetch, refetchOnWindowFocus
-  const { data, isLoading, error, isRefetching } = useQuery<
-    PaginatedFoodResponse,
-    Error
-  >({
+  const { data, isLoading, error, isRefetching } = useQuery<PaginatedProductResponse, Error>({
     queryKey,
     queryFn: async () => {
-      // Nếu có filter → gọi filterFoods
       if (Object.keys(filters).length > 0) {
-        const filteredData = await FoodService.filterFoods(
-          filters.categories,
-          filters.featured,
-          filters.unit,
-          filters.minPrice,
-          filters.maxPrice,
-          filters.region
-        );
-        
-        // Convert filtered array về PaginatedFoodResponse format
+        const filteredData = await ProductService.filterProducts({
+          category: PRODUCT_TYPES.FOOD,
+          featured: filters.featured,
+          unit: filters.unit,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
+          region: filters.region,
+        });
+
         return {
           data: filteredData,
           pageNumber: 1,
@@ -60,12 +44,9 @@ export function useFoodsQuery(
         };
       }
 
-      // Không có filter → gọi getAllFoodsPaginated
-      return FoodService.getAllFoodsPaginated(page, pageSize);
+      return ProductService.getProductsPaginated(PRODUCT_TYPES.FOOD, page, pageSize);
     },
-    // Query chỉ chạy lại khi filters/page/pageSize thay đổi
-    // Không cần manual useEffect dependency array!
-    staleTime: 1000 * 60 * 5, // Cache 5 phút
+    staleTime: 1000 * 60 * 5,
   });
 
   return {

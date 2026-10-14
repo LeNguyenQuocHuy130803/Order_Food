@@ -5,6 +5,7 @@ import lombok.*;
 
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 
 @Schema(description = "DTO for order request (checkout)")
 @Data
@@ -22,6 +23,12 @@ public class OrderRequestDto {
     @Schema(description = "Additional notes/instructions", example = "Giao nhanh vào sáng sớm")
     @Size(max = 500, message = "Notes cannot exceed 500 characters")
     private String notes;
+
+    @Schema(description = "Payment method: CASH, PAYPAL, etc.", example = "CASH")
+    private String paymentMethod;
+
+    @Schema(description = "List of specific cart item IDs to checkout (optional: if omitted, checkouts entire cart)", example = "[1, 2]")
+    private List<Long> cartItemIds;
 
     /**
      * Validation: Either addressType or address must be provided

@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react'
 import { 
   ShoppingBag, Package, Truck, Home, CheckCircle, 
-  XCircle, RotateCcw, Eye, RefreshCcw, ChevronRight 
+  XCircle, RotateCcw, RefreshCcw, ChevronRight
 } from 'lucide-react'
 import { useOrdersQuery } from '@/hooks/useOrdersQuery'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -138,20 +138,34 @@ export function OrdersTab() {
 
                   {/* Items - Rút gọn */}
                   <div className="space-y-4 mb-6">
-                    {order.items.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between group/item">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center font-black text-gray-300 text-xs">
-                            {item.quantity}x
+                    {order.items.slice(0, 3).map((item, idx) => {
+                      const itemPrice = item.priceAtTime ?? item.price ?? 0
+                      const itemImage = item.imageUrl ?? item.image
+                      return (
+                        <div key={idx} className="flex items-center justify-between group/item">
+                          <div className="flex items-center gap-3">
+                            {itemImage ? (
+                              <img
+                                src={itemImage}
+                                alt={item.productName}
+                                className="w-12 h-12 bg-gray-50 rounded-xl object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center font-black text-gray-400 text-xs">
+                                {item.quantity}x
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-bold text-gray-800 text-sm group-hover/item:text-[#ff5528] transition-colors">{item.productName}</p>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                {item.quantity}x • {formatPrice(itemPrice)}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-gray-800 text-sm group-hover/item:text-[#ff5528] transition-colors">{item.productName}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Đơn giá: {formatPrice(item.price)}</p>
-                          </div>
+                          <p className="font-black text-gray-700 text-sm">{formatPrice(itemPrice * item.quantity)}</p>
                         </div>
-                        <p className="font-black text-gray-700 text-sm">{formatPrice(item.price * item.quantity)}</p>
-                      </div>
-                    ))}
+                      )
+                    })}
                     {order.items.length > 3 && (
                       <p className="text-[10px] font-black text-[#ff5528] uppercase tracking-widest pl-1">
                         + và {order.items.length - 3} sản phẩm khác

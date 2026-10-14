@@ -7,12 +7,14 @@ import { FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authService } from '@/service/authService'
+import { toast } from 'sonner'
+import { signIn } from 'next-auth/react';
+
 
 export default function LoginForm() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   const {
@@ -26,7 +28,6 @@ export default function LoginForm() {
   const onSubmit = async (values: LoginFormData) => {
     try {
       setLoading(true)
-      setError(null)
 
       // ✅ Gọi authService để login
       // authService sẽ gọi /api/auth/login (route.ts)
@@ -41,13 +42,14 @@ export default function LoginForm() {
       authService.saveUserData(user)
 
       setSuccess(true)
+      toast.success('Login successful! Redirecting...')
       
       // ✅ Redirect tới dashboard sau 1 giây
       setTimeout(() => {
         router.push('/')
       }, 1000)
     } catch (err: unknown) {
-      setError((err as Error).message || 'Login failed, please try again.')
+      toast.error((err as Error).message || 'Login failed, please try again.')
     } finally {
       setLoading(false)
     }
@@ -68,22 +70,6 @@ export default function LoginForm() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-
-          {/* Success */}
-          {success && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800 font-medium text-center">
-                ✓ Login successful! Redirecting...
-              </p>
-            </div>
-          )}
-
-          {/* Error */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 font-medium text-center">{error}</p>
-            </div>
-          )}
 
           {/* Email */}
           <div>
@@ -199,6 +185,7 @@ export default function LoginForm() {
               type="button"
               disabled={loading || success}
               className="w-full bg-white border border-gray-300 hover:border-[#ff5528] hover:bg-orange-50 text-gray-700 font-semibold py-3 rounded-lg transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+              onClick={() => signIn('google', { callbackUrl: '/' })}
             >
               <FaGoogle className="w-5 h-5 text-[#4285F4]" />
               Google

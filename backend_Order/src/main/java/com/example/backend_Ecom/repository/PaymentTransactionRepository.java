@@ -19,4 +19,10 @@ public interface PaymentTransactionRepository extends JpaRepository<PaymentTrans
 
     // Check xem txnRef đã tồn tại chưa (để tránh duplicate)
     boolean existsByTxnRef(String txnRef);
+
+    // Tìm transaction theo order ID
+    Optional<PaymentTransaction> findByOrderId(Long orderId);
+
+    // Check xem order đã có payment thành công chưa (ràng buộc 1 payment với 1 order)
+    boolean existsByOrderIdAndStatus(Long orderId, String status);
 }

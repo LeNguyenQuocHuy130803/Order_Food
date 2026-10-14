@@ -12,9 +12,9 @@ import { PRODUCT_TYPES, type ProductType } from "@/types/cart";
 interface Product {
   id: number;
   name: string;
-  imageUrl: string;
+  imageUrl?: string;
   price: number;
-  featured: boolean;
+  featured?: boolean;
 }
 
 interface ProductCardProps {
@@ -47,11 +47,11 @@ export default function ProductCard({ product, type }: ProductCardProps) {
         duration: 2000,
         action: {
           label: "Giỏ hàng",
-          onClick: () => (window.location.href = "/cart"),
+          onClick: () => window.location.assign("/cart"),
         },
       });
-    } catch (err: any) {
-      toast.error(err.message || "Không thể thêm vào giỏ hàng");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Không thể thêm vào giỏ hàng");
     }
   };
 
@@ -70,7 +70,7 @@ export default function ProductCard({ product, type }: ProductCardProps) {
           {/* Image Section - Giữ tỷ lệ 4/3 nhưng thu nhỏ padding cảm giác */}
           <div className="relative w-full aspect-4/3 overflow-hidden bg-gray-50">
             <Image
-              src={imageUrl}
+              src={imageUrl || "/image/placeholder.jpg"}
               alt={name}
               fill
               sizes="(max-width: 768px) 100vw, 33vw"

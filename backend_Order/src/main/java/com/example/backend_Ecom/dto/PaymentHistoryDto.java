@@ -17,6 +17,8 @@ public class PaymentHistoryDto {
 
     private String txnRef; // Mã giao dịch (PayPal OrderId)
 
+    private Long orderId;
+
     private Long amount; // Số tiền VND
 
     private String status; // PENDING, SUCCESS, FAILED

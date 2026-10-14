@@ -45,3 +45,10 @@ export interface OrderCheckoutResponse {
   totalPrice: number
   createdAt: string
 }
+
+export interface CheckoutOrderRequest {
+  addressType?: string
+  address?: string
+  notes?: string
+  cartItemIds?: number[]
+}

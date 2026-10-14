@@ -27,7 +27,8 @@ public class VerificationToken {
     @Column(unique = true, nullable = false, length = 500)
     private String token;
 
-    @Column(nullable = false, length = 6)
+    // BCrypt hash dài 60 chars, đặt length = 100 để không bị truncate
+    @Column(nullable = false, length = 100)
     private String otp;
 
     @Column(name = "otp_expiry", nullable = false)

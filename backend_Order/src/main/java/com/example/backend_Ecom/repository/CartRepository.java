@@ -13,7 +13,8 @@ import java.util.Optional;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
 
-    // Lấy cart của user theo userId (dùng cho đọc thông thường)
+    // Lấy cart của user theo userId (eager fetch items để tránh N+1 query)
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"items"})
     Optional<Cart> findByUserId(Long userId);
 
     // ✅ FIX Double-Submit Race Condition: Khoá PESSIMISTIC khi Checkout

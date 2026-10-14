@@ -7,7 +7,8 @@ import { NextRequest, NextResponse } from 'next/server'
  * ✅ Forward request tới backend với Authorization header
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const RAW_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
+const API_URL = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL.replace(/\/$/, '')}/api`
 
 /**
  * PATCH /api/auth/change-password - Đổi mật khẩu

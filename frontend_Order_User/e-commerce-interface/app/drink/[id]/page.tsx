@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { motion } from "framer-motion"; // Đảm bảo đã cài: npm install framer-motion
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Drink } from "@/types/drink";
-import { DrinkService } from "@/service/DrinkService";
+import type { Product } from "@/service/ProductService";
+import { ProductService } from "@/service/ProductService";
 import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
@@ -32,9 +32,9 @@ export default function DrinkDetailPage() {
     data: drink, 
     isLoading, 
     error 
-  } = useQuery<Drink, Error>({
+  } = useQuery<Product, Error>({
     queryKey: ["drink", drinkId],
-    queryFn: () => DrinkService.getDrinkById(drinkId),
+    queryFn: () => ProductService.getProductById(drinkId),
     enabled: isValidDrinkId,
   });
 
@@ -111,7 +111,7 @@ export default function DrinkDetailPage() {
           >
             <div className="relative aspect-square w-full max-w-[480px] rounded-[2.5rem] overflow-hidden shadow-xl border border-gray-50 group">
               <Image
-                src={drink.imageUrl}
+                src={drink.imageUrl || "/image/placeholder.jpg"}
                 alt={drink.name}
                 fill
                 priority

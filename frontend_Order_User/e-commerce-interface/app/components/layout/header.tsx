@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, RefObject } from "react"
+import { useState, useEffect, useCallback, useRef, type RefObject } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Menu, X, ShoppingCart, Search, User, LogOut, LayoutDashboard, Settings } from "lucide-react"
@@ -8,6 +8,7 @@ import { SearchFilter } from "../search_filter"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserDetail } from "@/lib/api/queries"
 import { useCartQuery } from "@/hooks/useCartQuery"
+import type { AuthUser, UserDetail } from "@/types/user"
 
 const NAV_LINKS = [
   { name: "Home", href: "/" },
@@ -22,7 +23,7 @@ const NAV_LINKS = [
 
 const DEFAULT_AVATAR = '/image/avatarNull/avatarNull.jpg';
 
-function useOutsideClick(ref: RefObject<any>, callback: () => void) {
+function useOutsideClick(ref: RefObject<HTMLElement | null>, callback: () => void) {
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
@@ -35,8 +36,8 @@ function useOutsideClick(ref: RefObject<any>, callback: () => void) {
 }
 
 interface UserMenuDropdownProps {
-  profile: any;
-  user: any;
+  profile?: UserDetail;
+  user: AuthUser;
   avatarSrc: string;
   onLogout: () => Promise<void>;
   onClose: () => void;
@@ -46,7 +47,7 @@ function UserMenuDropdown({ profile, user, avatarSrc, onLogout, onClose }: UserM
   const dropdownRef = useRef<HTMLDivElement>(null);
   useOutsideClick(dropdownRef, onClose);
 
-  const isCustomer = user.roles?.includes('Customers');
+  const isCustomer = user.roles?.includes('CUSTOMER');
 
   return (
     <div ref={dropdownRef} className="absolute right-0 top-14 w-64 bg-white shadow-2xl rounded-2xl z-50 border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">

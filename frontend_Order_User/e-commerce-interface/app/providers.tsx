@@ -1,4 +1,3 @@
-
 'use client'
 
 import { SessionProvider } from 'next-auth/react'
@@ -23,7 +22,9 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SessionProvider>{children}</SessionProvider>
+      <SessionProvider>
+        {children}
+      </SessionProvider>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   )

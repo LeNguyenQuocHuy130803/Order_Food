@@ -8,6 +8,7 @@
 
 import { apiFetch } from '@/lib/api/api-client-refresh'
 import { AddToCartRequest, CartResponse, ProductType } from '@/types/cart'
+import { authService } from '@/service/authService'
 
 /**
  * Lấy giỏ hàng của user hiện tại
@@ -22,7 +23,7 @@ export async function getCart(): Promise<CartResponse> {
     })
 
     if (!res.ok) {
-      const errorData = await res.json()
+      const errorData = await res.json().catch(() => ({}))
       throw new Error(errorData.message || 'Failed to get cart')
     }
 
@@ -59,6 +60,10 @@ export async function addProductToCart(
   quantity: number = 1
 ): Promise<CartResponse> {
   try {
+    if (!authService.isAuthenticated()) {
+      throw new Error('Vui lòng đăng nhập để mua hàng!')
+    }
+
     console.log(`🛒 [CartService] Adding to cart:`, {
       productType,
       productId,
@@ -85,7 +90,7 @@ export async function addProductToCart(
     )
 
     if (!res.ok) {
-      const errorData = await res.json()
+      const errorData = await res.json().catch(() => ({}))
       throw new Error(errorData.message || 'Failed to add to cart')
     }
 
@@ -119,6 +124,10 @@ export async function updateCartItemQuantity(
   quantity: number
 ): Promise<CartResponse> {
   try {
+    if (!authService.isAuthenticated()) {
+      throw new Error('Vui lòng đăng nhập để thao tác!')
+    }
+
     console.log(`🛒 [CartService] Updating cart item quantity:`, {
       cartItemId,
       quantity,
@@ -126,15 +135,16 @@ export async function updateCartItemQuantity(
 
     // ✅ Dùng apiFetch (có auto-refresh token)
     const res = await apiFetch(
-      `/api/carts/items?cartItemId=${cartItemId}&quantity=${quantity}`,
+      `/api/carts/items/${cartItemId}`,
       {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity }),
       }
     )
 
     if (!res.ok) {
-      const errorData = await res.json()
+      const errorData = await res.json().catch(() => ({}))
       throw new Error(errorData.message || 'Failed to update quantity')
     }
 
@@ -157,8 +167,46 @@ export async function updateCartItemQuantity(
   }
 }
 
+/**
+ * Xóa item khỏi giỏ hàng
+ * @param cartItemId - ID của item trong giỏ hàng
+ * @returns Cart data
+ */
+export async function removeCartItem(cartItemId: number): Promise<CartResponse> {
+  try {
+    console.log(`📡 [CartService] Removing item:`, { cartItemId })
+
+    const res = await apiFetch(`/api/carts/items/${cartItemId}`, {
+      method: 'DELETE',
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Failed to remove item')
+    }
+
+    const cartData = (await res.json()) as CartResponse
+
+    console.log(`✅ [CartService] Remove item success:`, {
+      cartId: cartData.id,
+      totalPrice: cartData.totalPrice,
+      itemCount: cartData.items.length,
+    })
+
+    return cartData
+  } catch (error: unknown) {
+    const errorMsg = (error as Error).message || 'Failed to remove item'
+    console.log(`⚠️ [CartService] Remove item failed:`, {
+      message: errorMsg,
+      error,
+    })
+    throw new Error(errorMsg)
+  }
+}
+
 export const CartService = {
   getCart,
   addProductToCart,
   updateCartItemQuantity,
+  removeCartItem,
 }

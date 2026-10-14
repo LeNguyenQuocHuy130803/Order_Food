@@ -30,6 +30,9 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(404, "ROLE_NOT_FOUND", "Role not found"),
     RESOURCE_NOT_FOUND(404, "RESOURCE_NOT_FOUND", "Resource not found"),
     
+    // Rate Limiting (429)
+    RATE_LIMIT_EXCEEDED(429, "RATE_LIMIT_EXCEEDED", "Quá nhiều yêu cầu. Vui lòng thử lại sau ít phút."),
+    
     // Internal Server Error (500)
     INTERNAL_SERVER_ERROR(500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred");
 

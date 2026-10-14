@@ -1,45 +1,38 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { DrinkService } from "@/service/DrinkService";
-import type { Drink, PaginatedDrinkResponse, FilterParams } from "@/types/drink";
+import { ProductService, Product, PaginatedProductResponse } from "@/service/ProductService";
+import { PRODUCT_TYPES } from "@/types/cart";
+import type { FilterParams } from "@/types/product";
 
 interface UseDrinksQueryResult {
-  drinks: Drink[];
+  drinks: Product[];
   loading: boolean;
   error: string | null;
   totalPages: number;
   isRefetching: boolean;
 }
 
-/**
- * ✨ React Query Hook for Drinks
- * Automatically handles caching, deduplication, refetch
- */
 export function useDrinksQuery(
-  filters: FilterParams,
+  filters: FilterParams = {},
   page: number = 1,
   pageSize: number = 9
 ): UseDrinksQueryResult {
-  
   const queryKey = ["drinks", { filters, page, pageSize }];
 
-  const { data, isLoading, error, isRefetching } = useQuery<
-    PaginatedDrinkResponse,
-    Error
-  >({
+  const { data, isLoading, error, isRefetching } = useQuery<PaginatedProductResponse, Error>({
     queryKey,
     queryFn: async () => {
       if (Object.keys(filters).length > 0) {
-        const filteredData = await DrinkService.filterDrinks(
-          filters.categories,
-          filters.featured,
-          filters.unit,
-          filters.minPrice,
-          filters.maxPrice,
-          filters.region
-        );
-        
+        const filteredData = await ProductService.filterProducts({
+          category: PRODUCT_TYPES.DRINK,
+          featured: filters.featured,
+          unit: filters.unit,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
+          region: filters.region,
+        });
+
         return {
           data: filteredData,
           pageNumber: 1,
@@ -51,7 +44,7 @@ export function useDrinksQuery(
         };
       }
 
-      return DrinkService.getAllDrinksPaginated(page, pageSize);
+      return ProductService.getProductsPaginated(PRODUCT_TYPES.DRINK, page, pageSize);
     },
     staleTime: 1000 * 60 * 5,
   });

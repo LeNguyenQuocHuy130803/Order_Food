@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast, Toaster } from "sonner"
 import { ProductHeader } from "@/app/components/layout/product-header"
@@ -10,12 +10,15 @@ import { OrderSummary } from "@/app/components/checkout/OrderSummary"
 import { PaymentMethodSelector, PaymentMethod } from "@/app/components/checkout/PaymentMethodSelector"
 import { useCartQuery } from "@/hooks/useCartQuery"
 import { useAddresses } from "@/hooks/useAddresses"
+import { useRequireAuth } from "@/hooks/useRequireAuth"
 import { OrderService } from "@/service/OrderService"
+import { createPaypalOrder } from "@/service/PaymentService"
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { items, loading: cartLoading } = useCartQuery()
+  const { isAuthenticated, loading: authLoading } = useRequireAuth('/login-page')
+  const { items, loading: cartLoading } = useCartQuery(isAuthenticated)
   const { addresses } = useAddresses()
   
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash")
@@ -89,7 +92,7 @@ export default function CheckoutPage() {
 
       // 2️⃣ Nếu PayPal → tạo payment link
       if (paymentMethod === "paypal") {
-        const payment = await OrderService.createPayPalPayment(order.id)
+        const payment = await createPaypalOrder(order.id)
         console.log("✅ PayPal payment created:", payment)
         
         // 3️⃣ Xóa cart items trước khi redirect
@@ -203,7 +206,10 @@ export default function CheckoutPage() {
           {/* Main Content */}
           <div className="space-y-6">
             {/* 📍 Địa Chỉ Giao Hàng */}
-            <AddressSelector />
+            <AddressSelector 
+              selectedAddressId={selectedAddressId} 
+              onSelectedAddressChange={setSelectedAddressId} 
+            />
 
             {/* 🧾 Danh Sách Sản Phẩm */}
             <OrderSummary items={items} selectedItemIds={selectedItemIds} />
@@ -267,5 +273,19 @@ export default function CheckoutPage() {
       <Footer />
       <Toaster />
     </main>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#fafafa]">
+          <div className="w-10 h-10 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
   )
 }

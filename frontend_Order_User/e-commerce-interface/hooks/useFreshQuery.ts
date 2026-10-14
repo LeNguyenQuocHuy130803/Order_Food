@@ -1,45 +1,38 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { FreshService } from "@/service/FreshService";
-import type { Fresh, PaginatedFreshResponse, FilterParams } from "@/types/fresh";
+import { ProductService, Product, PaginatedProductResponse } from "@/service/ProductService";
+import { PRODUCT_TYPES } from "@/types/cart";
+import type { FilterParams } from "@/types/product";
 
 interface UseFreshQueryResult {
-  fresh: Fresh[];
+  fresh: Product[];
   loading: boolean;
   error: string | null;
   totalPages: number;
   isRefetching: boolean;
 }
 
-/**
- * ✨ React Query Hook for Fresh Products
- * Automatically handles caching, deduplication, refetch
- */
 export function useFreshQuery(
-  filters: FilterParams,
+  filters: FilterParams = {},
   page: number = 1,
   pageSize: number = 9
 ): UseFreshQueryResult {
-  
   const queryKey = ["fresh", { filters, page, pageSize }];
 
-  const { data, isLoading, error, isRefetching } = useQuery<
-    PaginatedFreshResponse,
-    Error
-  >({
+  const { data, isLoading, error, isRefetching } = useQuery<PaginatedProductResponse, Error>({
     queryKey,
     queryFn: async () => {
       if (Object.keys(filters).length > 0) {
-        const filteredData = await FreshService.filterFresh(
-          filters.categories,
-          filters.featured,
-          filters.unit,
-          filters.minPrice,
-          filters.maxPrice,
-          filters.region
-        );
-        
+        const filteredData = await ProductService.filterProducts({
+          category: PRODUCT_TYPES.FRESH,
+          featured: filters.featured,
+          unit: filters.unit,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
+          region: filters.region,
+        });
+
         return {
           data: filteredData,
           pageNumber: 1,
@@ -51,7 +44,7 @@ export function useFreshQuery(
         };
       }
 
-      return FreshService.getAllFreshPaginated(page, pageSize);
+      return ProductService.getProductsPaginated(PRODUCT_TYPES.FRESH, page, pageSize);
     },
     staleTime: 1000 * 60 * 5,
   });

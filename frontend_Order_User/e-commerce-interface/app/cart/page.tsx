@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { useCartQuery } from "@/hooks/useCartQuery";
+import { useAuth } from "@/hooks/useAuth";
 import { CartService } from "@/service/CartService";
 import { ProductHeader } from "@/app/components/layout/product-header";
 import { Footer } from "@/app/components/layout/footer";
@@ -12,7 +13,9 @@ import { toast } from "sonner";
 
 export default function CartPage() {
   const router = useRouter();
-  const { items, loading, refetch } = useCartQuery();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { items, loading: cartLoading, refetch } = useCartQuery(isAuthenticated);
+  const loading = authLoading || (isAuthenticated && cartLoading);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
 
   // ✅ Logic 1: Xử lý cập nhật số lượng
@@ -33,7 +36,7 @@ export default function CartPage() {
         next.delete(id);
         return next;
       });
-    } catch (err) {
+    } catch {
       toast.error("Không thể xóa sản phẩm");
     }
   };
@@ -77,11 +80,18 @@ export default function CartPage() {
           Giỏ hàng <span className="text-lg font-bold text-gray-400">({items.length})</span>
         </h1>
 
-        {items.length === 0 ? (
+        {!isAuthenticated ? (
+          <div className="bg-white rounded-3xl p-20 text-center shadow-sm border border-gray-100">
+             <ShoppingBag size={64} className="mx-auto text-gray-200 mb-6" />
+             <p className="text-gray-800 font-bold text-xl mb-2">Bạn chưa đăng nhập</p>
+             <p className="text-gray-400 text-sm mb-8">Vui lòng đăng nhập để xem các món ăn đã lưu trong giỏ hàng của bạn.</p>
+             <button onClick={() => router.push('/login-page')} className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-md shadow-red-200">Đăng nhập ngay</button>
+          </div>
+        ) : items.length === 0 ? (
           <div className="bg-white rounded-3xl p-20 text-center shadow-sm border border-gray-100">
              <ShoppingBag size={64} className="mx-auto text-gray-200 mb-6" />
              <p className="text-gray-500 font-bold text-xl mb-8">Giỏ hàng của bạn đang trống</p>
-             <button onClick={() => router.push('/')} className="bg-red-500 text-white px-8 py-4 rounded-2xl font-bold">Mua sắm ngay</button>
+             <button onClick={() => router.push('/food')} className="bg-red-500 text-white px-8 py-4 rounded-2xl font-bold">Mua sắm ngay</button>
           </div>
         ) : (
           <div className="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
@@ -109,7 +119,8 @@ export default function CartPage() {
                 onToggle={(id: number) => {
                   setSelectedItems(prev => {
                     const next = new Set(prev);
-                    next.has(id) ? next.delete(id) : next.add(id);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
                     return next;
                   });
                 }}

@@ -1,47 +1,59 @@
-import { useQuery } from '@tanstack/react-query'
-import { dessertService } from '@/service/DessertService'
-import type { Dessert, DessertFilterParams, PaginatedDessertResponse } from '@/types/dessert'
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { ProductService, Product, PaginatedProductResponse } from "@/service/ProductService";
+import { PRODUCT_TYPES } from "@/types/cart";
+import type { FilterParams } from "@/types/product";
 
 interface UseDessertQueryResult {
-  desserts: Dessert[]
-  loading: boolean
-  error: string | null
-  totalPages: number
-  isRefetching: boolean
+  desserts: Product[];
+  loading: boolean;
+  error: string | null;
+  totalPages: number;
+  isRefetching: boolean;
 }
 
-/**
- * Hook để fetch desserts
- * Auto-cache: 5 phút
- * Auto-refetch nếu cần
- */
 export function useDessertQuery(
-  filters?: DessertFilterParams | null,
+  filters: FilterParams = {},
   page: number = 1,
   pageSize: number = 9
 ): UseDessertQueryResult {
-  const { data, isLoading, error, isRefetching } = useQuery<PaginatedDessertResponse, Error>({
-    queryKey: ['desserts', { filters, page, pageSize }],
+  const queryKey = ["desserts", { filters, page, pageSize }];
 
+  const { data, isLoading, error, isRefetching } = useQuery<PaginatedProductResponse, Error>({
+    queryKey,
     queryFn: async () => {
-      // Nếu có filters
-      if (filters && Object.keys(filters).length > 0) {
-        return await dessertService.filterDesserts(filters)
+      if (Object.keys(filters).length > 0) {
+        const filteredData = await ProductService.filterProducts({
+          category: PRODUCT_TYPES.DESSERT,
+          featured: filters.featured,
+          unit: filters.unit,
+          minPrice: filters.minPrice,
+          maxPrice: filters.maxPrice,
+          region: filters.region,
+        });
+
+        return {
+          data: filteredData,
+          pageNumber: 1,
+          pageSize: filteredData.length,
+          totalRecords: filteredData.length,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        };
       }
 
-      // Mặc định: fetch all with pagination
-      return await dessertService.getAllDessertsPaginated(page, pageSize)
+      return ProductService.getProductsPaginated(PRODUCT_TYPES.DESSERT, page, pageSize);
     },
-
-    staleTime: 5 * 60 * 1000, // 5 phút
-    gcTime: 10 * 60 * 1000, // 10 phút
-  })
+    staleTime: 1000 * 60 * 5,
+  });
 
   return {
-    desserts: Array.isArray(data) ? data : data?.data || [],
+    desserts: data?.data || [],
     loading: isLoading,
     error: error?.message || null,
-    totalPages: Array.isArray(data) ? 1 : data?.totalPages || 1,
+    totalPages: data?.totalPages || 0,
     isRefetching,
-  }
+  };
 }

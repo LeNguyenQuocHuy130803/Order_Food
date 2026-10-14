@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   Clock, User, MessageCircle, ArrowLeft, Phone, MapPin,
@@ -14,7 +14,6 @@ import { motion, Variants } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useCartQuery } from "@/hooks/useCartQuery";
 import { BlogService } from "@/service/BlogService";
-import type { BlogPost } from "@/types/blog";
 
 // --- CẤU HÌNH DỮ LIỆU ---
 const NAV_LINKS = [
@@ -68,7 +67,6 @@ const fadeInUp: Variants = {
 
 export default function BlogDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const blogId = parseInt(params.id as string);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

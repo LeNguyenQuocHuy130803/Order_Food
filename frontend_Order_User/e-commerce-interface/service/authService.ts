@@ -52,7 +52,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthUser
 
     if (!response.ok) {
       const error = await response.json()
-      console.error(`❌ [authService] Error:`, error)
+      console.log(`⚠️ [authService] Error:`, error)
       throw new Error((error as Error).message || 'Login failed')
     }
 
@@ -70,7 +70,7 @@ export async function loginUser(credentials: LoginCredentials): Promise<AuthUser
     return data.user
   } catch (error: unknown) {
     const errorMessage = (error as Error).message || 'Tên đăng nhập hoặc mật khẩu không chính xác'
-    console.error(`❌ [authService] Exception:`, errorMessage)
+    console.log(`⚠️ [authService] Exception:`, errorMessage)
     throw new Error(errorMessage)
   }
 }

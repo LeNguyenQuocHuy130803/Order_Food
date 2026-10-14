@@ -19,10 +19,7 @@ import java.util.List;
 @Service
 public class ProductStockService {
 
-    private final FoodRepository foodRepository;
-    private final DrinkRepository drinkRepository;
-    private final DessertRepository dessertRepository;
-    private final FreshRepository freshRepository;
+    private final ProductRepository productRepository;
 
     /**
      * Check stock cho multiple items (Real-time)
@@ -58,44 +55,15 @@ public class ProductStockService {
     }
 
     /**
-     * Check stock cho 1 sản phẩm duy nhất
-     * Consolidated: không cần 4 hàm riêng vì logic hoàn toàn giống nhau, chỉ khác repository
+     * Check stock cho 1 sản phẩm duy nhất từ ProductRepository
      */
     private StockCheckResponseDto.StockStatus checkSingleProduct(
             ProductType productType, Long productId, Integer requestedQuantity) {
 
-        String productName;
-        Integer availableQuantity;
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Product not found with ID: " + productId));
 
-        switch (productType) {
-            case FOOD -> {
-                Food food = foodRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food product not found"));
-                productName = food.getName();
-                availableQuantity = food.getQuantity();
-            }
-            case DRINK -> {
-                Drink drink = drinkRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink product not found"));
-                productName = drink.getName();
-                availableQuantity = drink.getQuantity();
-            }
-            case DESSERT -> {
-                Dessert dessert = dessertRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert product not found"));
-                productName = dessert.getName();
-                availableQuantity = dessert.getQuantity();
-            }
-            case FRESH -> {
-                Fresh fresh = freshRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
-                productName = fresh.getName();
-                availableQuantity = fresh.getQuantity();
-            }
-            default -> throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type: " + productType);
-        }
-
-        return buildStockStatus(productType, productId, productName, requestedQuantity, availableQuantity);
+        return buildStockStatus(productType, productId, product.getName(), requestedQuantity, product.getQuantity());
     }
 
     /**

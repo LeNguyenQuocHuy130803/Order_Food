@@ -4,8 +4,8 @@ import { Clock, Star, ShoppingCart, Quote } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { FoodService } from "@/service/FoodService";
-import type { Food, PaginatedFoodResponse } from "@/types/food";
+import { ProductService, Product, PaginatedProductResponse } from "@/service/ProductService";
+import { ProductType } from "@/types/cart";
 import { motion, Variants } from "framer-motion";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { PRODUCT_TYPES } from "@/types/cart";
@@ -16,14 +16,6 @@ interface Category {
   name: string;
   icon: string;
   count: string;
-}
-
-interface FoodItem {
-  name: string;
-  price: string;
-  desc: string;
-  rating: number;
-  image: string;
 }
 
 interface Testimonial {
@@ -71,22 +63,22 @@ export default function FoodCategory() {
   ];
 
   // Fetch top 6 popular foods from API (replace hardcoded list)
-  const { data: foodsResp, isLoading: foodsLoading, error: foodsError } = useQuery<PaginatedFoodResponse>({
+  const { data: foodsResp } = useQuery<PaginatedProductResponse>({
     queryKey: ["foods", "popular"],
-    queryFn: () => FoodService.getAllFoodsPaginated(1, 6),
+    queryFn: () => ProductService.getProductsPaginated(PRODUCT_TYPES.FOOD, 1, 6),
     staleTime: 1000 * 60 * 5,
   });
 
-  const foodpopular: Food[] = (foodsResp as PaginatedFoodResponse | undefined)?.data || [];
+  const foodpopular = foodsResp?.data ?? [];
 
   // Best Seller (featured) foods
-  const { data: featuredResp, isLoading: featuredLoading } = useQuery<Food[]>({
+  const { data: featuredResp, isLoading: featuredLoading } = useQuery<Product[]>({
     queryKey: ["foods", "featured"],
-    queryFn: () => FoodService.filterFoods(undefined, true),
+    queryFn: () => ProductService.filterProducts({ category: PRODUCT_TYPES.FOOD, featured: true }),
     staleTime: 1000 * 60 * 5,
   });
 
-  const bestSellers: Food[] = featuredResp || [];
+  const bestSellers = featuredResp ?? [];
 
   const evaluation: Testimonial[] = [
     { name: "Sarah Johnson", role: "Food Blogger", text: "The best fried chicken I've ever had! Absolutely perfect.", avatar: "/image/evaluation1.jpg" },
@@ -238,24 +230,22 @@ export default function FoodCategory() {
             variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {foodpopular.map((item, index) => {
-              const imgSrc = (item as any).imageUrl || (item as any).image || "/image/placeholder.jpg";
-              const desc = (item as any).desc || (item as any).description || "";
-              const priceText = typeof (item as any).price === "number" ? `$${(item as any).price.toFixed(2)}` : ((item as any).price as string) ?? "$0.00";
+            {foodpopular.map((item) => {
+              const imgSrc = item.imageUrl || "/image/placeholder.jpg";
+              const desc = item.description || "";
+              const priceText = `$${item.price.toFixed(2)}`;
 
               return (
-                <motion.div key={(item as any).id ?? index} variants={fadeInUp} className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
+                <motion.div key={item.id} variants={fadeInUp} className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-500">
                   <div className="relative h-56 overflow-hidden bg-gray-50">
-                    <Image src={imgSrc} alt={(item as any).name} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" />
+                    <Image src={imgSrc} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" />
                   </div>
                   <div className="p-8">
-                    <h3 className="text-xl font-bold text-[#0d0d0d] group-hover:text-[#ff5528] transition-colors">{(item as any).name}</h3>
+                    <h3 className="text-xl font-bold text-[#0d0d0d] group-hover:text-[#ff5528] transition-colors">{item.name}</h3>
                     <p className="text-gray-400 text-sm mt-3 font-medium line-clamp-2">{desc}</p>
                     <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-50">
                       <span className="text-2xl font-black text-[#ff5528]">{priceText}</span>
-                      <button className="bg-[#ff5528] hover:bg-orange-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2">
-                        <ShoppingCart size={14} /> Thêm vào giỏ
-                      </button>
+                      <AddToCartButton food={item} />
                     </div>
                   </div>
                 </motion.div>
@@ -324,7 +314,7 @@ export default function FoodCategory() {
                 <div className="flex gap-1 mb-6">
                   {[1, 2, 3, 4, 5].map((s) => <Star key={s} size={14} className="text-[#ffb936] fill-[#ffb936]" />)}
                 </div>
-                <p className="text-gray-600 italic font-medium mb-8 leading-relaxed">"{item.text}"</p>
+                <p className="text-gray-600 italic font-medium mb-8 leading-relaxed">&quot;{item.text}&quot;</p>
                 <div className="flex items-center gap-4">
                   <div className="relative w-12 h-12 border-2 border-white shadow-lg rounded-full overflow-hidden">
                     <Image src={item.avatar} alt={item.name} fill className="object-cover" />
@@ -343,7 +333,7 @@ export default function FoodCategory() {
   );
 }
 
-function AddToCartButton({ food }: { food: Food }) {
+function AddToCartButton({ food }: { food: Product }) {
   const { addToCartAsync, isLoading } = useAddToCart()
 
   const handleAdd = async () => {
@@ -355,11 +345,11 @@ function AddToCartButton({ food }: { food: Food }) {
         duration: 2000,
         action: {
           label: "Giỏ hàng",
-          onClick: () => (window.location.href = "/cart"),
+          onClick: () => window.location.assign("/cart"),
         },
       })
-    } catch (err: any) {
-      toast.error(err.message || "Không thể thêm vào giỏ hàng")
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Không thể thêm vào giỏ hàng")
     }
   }
 

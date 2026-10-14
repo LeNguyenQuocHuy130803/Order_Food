@@ -1,0 +1,25 @@
+# Environment Variables (NEVER COMMIT REAL SECRETS)
+.env
+.env.local
+.env.*.local
+*.env
+
+# JVM Crash Logs
+hs_err_pid*.log
+replay_pid*.log
+
+# Workspace Specific Ignores
+backend_Ecom/search&filter.md
+frontend_Ecom_User/e-commerce-interface/app/components/filter_sidebar.tsx
+backend_Ecom/FRONTEND_GUIDE.md
+frontend_Ecom_User/e-commerce-interface/TUTORIAL_LOC_SP.md
+frontend_Order_User/e-commerce-interface/cách_add_product_card.md
+frontend_Order_User/e-commerce-interface/STOCK_FIX_EXPLANATION.md
+backend_Order/cách_add_product_card.md
+backend_Order/Blog_API_Guide.md
+backend_Order/Blog_QuickStart.md
+frontend_Order_User/e-commerce-interface/UI_cart.md
+frontend_Order_User/e-commerce-interface/giai_thich_dung_fetch_thay_vi_axios_trong_service.md
+frontend_Order_User/e-commerce-interface/luồng_đi_khi_bấm_Thanh_Toán.md
+frontend_Order_User/e-commerce-interface/FRONTEND_PAYPAL_PAYMENT_SPEC.md
+/frontend_Order_User/e-commerce-interface/HUONG_DAN_CHI_TIET_LOGIN_OAUTH_GOOGLE.md

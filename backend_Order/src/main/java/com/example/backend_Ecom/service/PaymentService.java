@@ -15,9 +15,10 @@ import org.springframework.web.client.RestTemplate;
 import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
 
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -36,15 +37,26 @@ public class PaymentService {
     private final RestTemplate paypalRestTemplate;
 
     // ================= CREATE PAYMENT =================
+    @Transactional
     public Map<String, Object> createPaypalOrder(Long userId, PaymentRequestDto request) {
 
         try {
             Long orderId = request.getOrderId();
 
             var orderDto = orderService.getOrderById(orderId, userId);
-            double amountVND = orderDto.getTotalPrice().doubleValue();
 
-            double amountUSD = convertVNDtoUSD(amountVND);
+            // ✅ Ràng buộc 1 payment với 1 order: kiểm tra xem order đã thanh toán chưa
+            if (orderDto.getStatus() == com.example.backend_Ecom.enums.OrderStatus.PAID) {
+                log.warn("⚠️ Order {} is already marked as PAID", orderId);
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Đơn hàng #" + orderId + " đã được thanh toán trước đó!");
+            }
+            if (paymentTransactionRepository.existsByOrderIdAndStatus(orderId, "SUCCESS")) {
+                log.warn("⚠️ Successful payment transaction already exists for Order {}", orderId);
+                throw new AppException(ErrorCode.INVALID_REQUEST, "Đơn hàng #" + orderId + " đã có giao dịch thanh toán thành công!");
+            }
+
+            BigDecimal amountVND = orderDto.getTotalPrice();
+            BigDecimal amountUSD = convertVNDtoUSD(amountVND);
 
             String accessToken = getAccessToken();
 
@@ -57,7 +69,7 @@ public class PaymentService {
             Map<String, Object> purchaseUnit = new HashMap<>();
             purchaseUnit.put("amount", Map.of(
                     "currency_code", "USD",
-                    "value", String.format(Locale.US, "%.2f", amountUSD)
+                    "value", amountUSD.toPlainString()
             ));
             purchaseUnit.put("description", "Payment for Order " + orderId);
             purchaseUnit.put("custom_id", customId);
@@ -96,7 +108,8 @@ public class PaymentService {
             PaymentTransaction txn = PaymentTransaction.builder()
                     .txnRef(paypalOrderId)
                     .userId(userId)
-                    .amount((long) amountVND)
+                    .orderId(orderId)
+                    .amount(amountVND.longValue())
                     .status("PENDING")
                     .provider("PAYPAL")
                     .paypalOrderId(paypalOrderId)
@@ -255,6 +268,9 @@ public class PaymentService {
      * Extract orderId từ transaction orderInfo
      */
     private Long extractOrderIdFromTransactionInfo(PaymentTransaction txn) {
+        if (txn.getOrderId() != null) {
+            return txn.getOrderId();
+        }
         try {
             String orderInfo = txn.getOrderInfo(); // "Order {id}"
             if (orderInfo != null && orderInfo.startsWith("Order ")) {
@@ -277,6 +293,9 @@ public class PaymentService {
         }
 
         PaymentTransaction txn = optionalTxn.get();
+        if (orderId != null) {
+            txn.setOrderId(orderId);
+        }
         
         // Update status
         String transactionStatus = "COMPLETED".equals(paypalStatus) ? "SUCCESS" : "FAILED";
@@ -367,6 +386,7 @@ public class PaymentService {
         return PaymentHistoryDto.builder()
                 .id(txn.getId())
                 .txnRef(txn.getTxnRef())
+                .orderId(txn.getOrderId())
                 .amount(txn.getAmount())
                 .status(txn.getStatus())
                 .statusVN(statusVN)
@@ -409,8 +429,8 @@ public class PaymentService {
         return response.getBody().get("access_token").toString();
     }
 
-    private String buildCustomId(Long userId, Long orderId, double amount) {
-        String raw = "ORDER|" + userId + "|" + orderId + "|" + amount;
+    private String buildCustomId(Long userId, Long orderId, BigDecimal amount) {
+        String raw = "ORDER|" + userId + "|" + orderId + "|" + amount.toPlainString();
         return Base64.getUrlEncoder()
                 .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
@@ -438,7 +458,8 @@ public class PaymentService {
         return null;
     }
 
-    private double convertVNDtoUSD(double amountVND) {
-        return Math.round((amountVND / config.getVndUsdRate()) * 100.0) / 100.0;
+    private BigDecimal convertVNDtoUSD(BigDecimal amountVND) {
+        BigDecimal rate = BigDecimal.valueOf(config.getVndUsdRate());
+        return amountVND.divide(rate, 2, RoundingMode.HALF_UP);
     }
 }

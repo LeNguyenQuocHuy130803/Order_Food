@@ -1,12 +1,11 @@
 
-import apiClient from '@/lib/apiClient'
 import type { UserDetail } from '@/types/user'
-import { apiFetch } from '@/lib/api/api-client-refresh'
+import { apiFetch, POST } from '@/lib/api/api-client-refresh'
 
 /**
  * UserService - Lấy và quản lí user data
  * Chỉ liên quan đến việc fetch user info từ API
- * Dùng apiClient (axios) với auto-refresh token interceptor
+ * Dùng apiFetch với auto-refresh token interceptor
  */
 
 /**
@@ -18,20 +17,25 @@ export const getUserById = async (userId: number): Promise<UserDetail> => {
   try {
     console.log(`🔍 [userService] Fetching user details for ID: ${userId}`)
     
-    const res = await apiClient.get<UserDetail>(
-      `/users/${userId}`
-    )
+    const res = await apiFetch(`/api/users/${userId}`, { method: 'GET' })
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Failed to fetch user')
+    }
+    
+    const data = await res.json()
     
     console.log(`✅ [userService] User details fetched:`, {
-      id: res.data.id,
-      email: res.data.email,
-      userName: res.data.userName,
-      phoneNumber: res.data.phoneNumber,
-      addresses: res.data.addresses,
-      createdAt: res.data.createdAt,
+      id: data.id,
+      email: data.email,
+      userName: data.userName,
+      phoneNumber: data.phoneNumber,
+      addresses: data.addresses,
+      createdAt: data.createdAt,
     })
     
-    return res.data
+    return data
   } catch (error) {
     console.error("❌ [userService] Error in getUserById:", error)
     throw error
@@ -57,17 +61,19 @@ export const updateUser = async (userId: number, data: Partial<UserDetail>, avat
       formData.append('avatar', avatarFile)
     }
     
-    const res = await apiClient.patch<UserDetail>(
-      `/users/${userId}`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    )
-    console.log(`✅ [userService] User updated:`, res.data)
-    return res.data
+    const res = await apiFetch(`/api/users/${userId}`, {
+      method: 'PATCH',
+      body: formData,
+    })
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Failed to update user')
+    }
+
+    const resData = await res.json()
+    console.log(`✅ [userService] User updated:`, resData)
+    return resData
   } catch (error) {
     console.error("❌ [userService] Error in updateUser:", error)
     throw error
@@ -82,13 +88,15 @@ export const handle_forgotPassWord = async (email: string): Promise<{ message: s
   try {
     console.log(`📧 [userService] clicking forgot password for email: ${email}`)
 
-    const res = await apiClient.post<{ message: string }>(
-      `/auth/forgot-password`,
-      { email }
-    )
+    const res = await POST(`/api/auth/forgot-password`, { email })
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Forgot password failed')
+    }
+    const data = await res.json()
 
-    console.log(`✅ [userService] OTP sent to email:`, res.data.message)
-    return res.data
+    console.log(`✅ [userService] OTP sent to email:`, data.message)
+    return data
   } catch (error) {
     console.error('❌ [userService] Error in handle_forgotPassWord:', error)
     throw error
@@ -109,34 +117,61 @@ export const resetPassword = async (
   try {
     console.log(`🔐 [userService] Resetting password for email: ${email}`)
 
-    const res = await apiClient.post<{ message: string }>(
-      `/auth/reset-password`,
+    const res = await POST(
+      `/api/auth/reset-password`,
       {
         email,
         otp,
         newPassword,
       }
     )
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Reset password failed')
+    }
+    const data = await res.json()
 
-    console.log(`✅ [userService] Password reset successfully:`, res.data.message)
-    return res.data
+    console.log(`✅ [userService] Password reset successfully:`, data.message)
+    return data
   } catch (error) {
     console.error('❌ [userService] Error in resetPassword:', error)
     throw error
   }
 }
 
+export const sendChangePasswordOtp = async (): Promise<{ message: string; success: boolean }> => {
+  try {
+    console.log('📧 [userService] Sending change password OTP')
+
+    const res = await apiFetch('/api/auth/change-password/send-otp', {
+      method: 'POST',
+    })
+
+    if (!res.ok) {
+      const errorData = await res.json()
+      throw new Error(errorData.message || 'Failed to send OTP')
+    }
+
+    const data = await res.json()
+    console.log('✅ [userService] OTP sent successfully:', data.message)
+    return data
+  } catch (error) {
+    throw error
+  }
+}
+
 export const changePassword = async (
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
+  otp: string
 ): Promise<{ message: string; success?: boolean }> => {
   try {
-    console.log('🔐 [userService] Changing password')
+    console.log('🔐 [userService] Changing password with OTP verification')
 
     const res = await apiFetch('/api/auth/change-password', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ oldPassword, newPassword }),
+      body: JSON.stringify({ oldPassword, newPassword, otp }),
     })
 
     if (!res.ok) {
@@ -158,4 +193,5 @@ export const userService = {
   getUserById,
   updateUser,
   changePassword,
+  sendChangePasswordOtp,
 }

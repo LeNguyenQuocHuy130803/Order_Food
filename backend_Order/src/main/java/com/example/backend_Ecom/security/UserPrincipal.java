@@ -11,7 +11,6 @@ import lombok.Setter;
  * Allows easy access to user ID from Authentication object in controllers
  */
 @Getter
-@Setter
 public class UserPrincipal implements UserDetails {
 
     private Long id;

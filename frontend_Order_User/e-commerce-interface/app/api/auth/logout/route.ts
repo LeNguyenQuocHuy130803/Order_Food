@@ -15,7 +15,9 @@ export async function POST() {
       { status: 200 }
     )
 
-    // ✅ Delete HTTP-only cookies
+    // ✅ Delete HTTP-only cookies triệt để với path: '/'
+    res.cookies.set('accessToken', '', { maxAge: 0, path: '/' })
+    res.cookies.set('refreshToken', '', { maxAge: 0, path: '/' })
     res.cookies.delete('accessToken')
     res.cookies.delete('refreshToken')
 

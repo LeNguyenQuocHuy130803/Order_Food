@@ -3,22 +3,26 @@
 import { useQuery } from "@tanstack/react-query"
 import { CartService } from "@/service/CartService"
 import { CartData } from "@/types/cart"
+import { useAuth } from "@/hooks/useAuth"
 
 export const CART_QUERY_KEY = ["cart"] as const
 
 /**
  * 🛒 React Query Hook - Lấy giỏ hàng của user
- * ✅ Auto-refresh token khi hết hạn (apiFetch interceptor handles 401)
+ * ✅ Tự động kiểm tra đăng nhập qua useAuth (nếu không truyền tham số)
+ * ✅ Chỉ fetch khi đã đăng nhập -> Không spam 401 với khách vãng lai
+ * ✅ Auto-refresh token khi hết hạn
  * ✅ Cache data 5 phút
- * ✅ Không refetch khi focus window
  */
-export function useCartQuery(isAuthenticated?: boolean) {
-  const canFetchCart = isAuthenticated !== false
+export function useCartQuery(isAuthenticatedParam?: boolean) {
+  const { isAuthenticated: authIsAuth } = useAuth()
+  const canFetchCart = Boolean(isAuthenticatedParam !== undefined ? isAuthenticatedParam : authIsAuth)
+
   const { data, isLoading, error, refetch, isRefetching } = useQuery<CartData>({
     queryKey: CART_QUERY_KEY,
     queryFn: async () => {
       console.log(`🛒 [useCartQuery] Fetching cart...`)
-      
+
       // ✅ Gọi CartService thay vì apiFetch trực tiếp
       const cartData = await CartService.getCart()
 

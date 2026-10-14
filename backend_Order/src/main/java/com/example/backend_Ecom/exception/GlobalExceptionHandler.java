@@ -120,7 +120,6 @@ public class GlobalExceptionHandler {
         log.error("Database integrity violation occurred", ex);
         
         String message = "Database operation failed";
-        // Check for specific constraint violations
         if (ex.getMessage() != null) {
             if (ex.getMessage().contains("email")) {
                 message = "Email already exists";
@@ -144,7 +143,6 @@ public class GlobalExceptionHandler {
 
     /**
      * Handle all uncaught exceptions - Fallback handler
-     * This is the last resort for unexpected errors
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(

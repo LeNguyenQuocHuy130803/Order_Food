@@ -9,7 +9,7 @@ import com.example.backend_Ecom.exception.AppException;
 import com.example.backend_Ecom.exception.ErrorCode;
 import com.example.backend_Ecom.repository.AddressRepository;
 import com.example.backend_Ecom.repository.UserJpaRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-@Transactional
 public class AddressService {
 
     private final AddressRepository addressRepository;
@@ -29,6 +28,7 @@ public class AddressService {
     /**
      * Create new address for user
      */
+    @Transactional
     public AddressResponseDto createAddress(Long userId, AddressRequestDto request) {
         User user = userJpaRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND, "User not found with ID: " + userId));
@@ -55,6 +55,7 @@ public class AddressService {
                 .user(user)
                 .type(addressType)
                 .address(request.getAddress())
+                .phoneNumber(request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank() ? request.getPhoneNumber() : user.getPhoneNumber())
                 .isDefault(request.getIsDefault() != null ? request.getIsDefault() : false)
                 .build();
 
@@ -66,6 +67,7 @@ public class AddressService {
     /**
      * Get all addresses for user
      */
+    @Transactional(readOnly = true)
     public List<AddressResponseDto> getAddressesByUserId(Long userId) {
         // Verify user exists
         if (!userJpaRepository.existsById(userId)) {
@@ -80,6 +82,7 @@ public class AddressService {
     /**
      * Get address by ID
      */
+    @Transactional(readOnly = true)
     public AddressResponseDto getAddressById(Long addressId, Long currentUserId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Address not found with ID: " + addressId));
@@ -90,6 +93,7 @@ public class AddressService {
     /**
      * Update address
      */
+    @Transactional
     public AddressResponseDto updateAddress(Long addressId, AddressRequestDto request, Long currentUserId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Address not found with ID: " + addressId));
@@ -106,6 +110,10 @@ public class AddressService {
 
         if (request.getAddress() != null && !request.getAddress().isBlank()) {
             address.setAddress(request.getAddress());
+        }
+
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
+            address.setPhoneNumber(request.getPhoneNumber());
         }
 
         // If setting as default, unset other defaults
@@ -129,6 +137,7 @@ public class AddressService {
     /**
      * Delete address
      */
+    @Transactional
     public void deleteAddress(Long addressId, Long currentUserId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Address not found with ID: " + addressId));
@@ -141,7 +150,8 @@ public class AddressService {
     /**
      * Get default address (type = HOME) for user
      */
-    public AddressResponseDto getDefaultAddress(Long userId) {  // Xác minh user tồn tại, Tìm address có type = HOME và isDefault = true, Trả về exception nếu không tìm thấy
+    @Transactional(readOnly = true)
+    public AddressResponseDto getDefaultAddress(Long userId) {
         // Verify user exists
         if (!userJpaRepository.existsById(userId)) {
             throw new AppException(ErrorCode.USER_NOT_FOUND, "User not found with ID: " + userId);

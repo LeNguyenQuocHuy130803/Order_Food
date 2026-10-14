@@ -19,6 +19,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 
 @Tag(name = "Order", description = "Order management operations")
+@org.springframework.validation.annotation.Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/orders")
@@ -58,11 +59,13 @@ public class OrderController {
     @GetMapping("/paging")
     public ResponseEntity<PaginatedOrderResponseDto> getUserOrders(
             @AuthenticationPrincipal UserPrincipal principal,
+            @Parameter(description = "Filter by order status (optional)")
+            @RequestParam(required = false) OrderStatus status,
             @Parameter(description = "Page number (1-based)", example = "1")
             @RequestParam(defaultValue = "1") @Min(value = 1, message = "Page must be >= 1") int page,
             @Parameter(description = "Number of items per page", example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be >= 1") @Max(value = 100, message = "Size must be <= 100") int size) {
-        return ResponseEntity.ok(orderService.getUserOrders(principal.getId(), page, size));
+        return ResponseEntity.ok(orderService.getUserOrders(principal.getId(), status, page, size));
     }
 
     /**

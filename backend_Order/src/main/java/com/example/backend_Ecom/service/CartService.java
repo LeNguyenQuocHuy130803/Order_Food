@@ -23,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CartService {
 
     private final CartRepository cartRepository;
-    private final FoodRepository foodRepository;
-    private final DrinkRepository drinkRepository;
-    private final DessertRepository dessertRepository;
-    private final FreshRepository freshRepository;
+    private final ProductRepository productRepository;
     private final UserJpaRepository userRepository;
 
     /**
@@ -57,14 +54,14 @@ public class CartService {
                 ProductInfo freshInfo = getProductInfo(item.getProductType(), item.getProductId());
                 
                 // Cập nhật nếu Admin mới đổi Giá hoặc Tên món
-                if (!item.getPriceAtTime().equals(freshInfo.price()) || 
-                    !item.getProductName().equals(freshInfo.name())) {
+                if (item.getPriceAtTime() == null || item.getPriceAtTime().compareTo(freshInfo.price()) != 0 || 
+                    !java.util.Objects.equals(item.getProductName(), freshInfo.name())) {
                     item.setPriceAtTime(freshInfo.price());
                     item.setProductName(freshInfo.name());
                     isModified = true;
                 }
             } catch (AppException e) {
-                // Rớt vào đây tức là FoodType + FoodId này không tốn tại nữa (Admin đã xoá)
+                // Rớt vào đây tức là ProductId này không tồn tại nữa (Admin đã xoá)
                 // -> Chuẩn bị xoá khỏi giỏ
                 itemsToRemove.add(item);
                 log.warn("Auto-healing Cart: Removed stale product {} (ID: {}) from user {}'s cart", 
@@ -93,33 +90,23 @@ public class CartService {
     }
 
     /**
-     * Lấy chi tiết product (name + price + imageUrl) từ các repositories khác nhau
+     * Lấy chi tiết product (name + price + imageUrl) từ ProductRepository duy nhất
+     * ✅ Validate productType khớp với Product.category
      */
     private ProductInfo getProductInfo(ProductType productType, Long productId) {
-        switch (productType) {
-            case FOOD:
-                Food food = foodRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Food not found"));
-                return new ProductInfo(food.getName(), food.getPrice(), food.getQuantity(), food.getImageUrl());
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Product not found with ID: " + productId));
 
-            case DRINK:
-                Drink drink = drinkRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Drink not found"));
-                return new ProductInfo(drink.getName(), drink.getPrice(), drink.getQuantity(), drink.getImageUrl());
-
-            case DESSERT:
-                Dessert dessert = dessertRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Dessert not found"));
-                return new ProductInfo(dessert.getName(), dessert.getPrice(), dessert.getQuantity(), dessert.getImageUrl());
-
-            case FRESH:
-                Fresh fresh = freshRepository.findById(productId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID_REQUEST, "Fresh product not found"));
-                return new ProductInfo(fresh.getName(), fresh.getPrice(), fresh.getQuantity(), fresh.getImageUrl());
-
-            default:
-                throw new AppException(ErrorCode.INVALID_REQUEST, "Invalid product type");
+        // ✅ Validate productType khớp với category của sản phẩm
+        if (productType != null && product.getCategory() != null && product.getCategory() != productType) {
+            log.warn("⚠️ Product category mismatch: Product ID {} has category {}, but requested {}",
+                productId, product.getCategory(), productType);
+            throw new AppException(ErrorCode.INVALID_REQUEST,
+                "Product category mismatch: Product ID " + productId + " belongs to category "
+                + product.getCategory() + ", but requested " + productType);
         }
+
+        return new ProductInfo(product.getName(), product.getPrice(), product.getQuantity(), product.getImageUrl());
     }
 
     /**

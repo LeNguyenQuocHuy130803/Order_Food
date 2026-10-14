@@ -46,120 +46,157 @@ const processQueue = (error: any, token: string | null = null) => {
 }
 
 /**
+ * 🧹 Dọn dẹp phiên đăng nhập êm thầm (Silent Cleanup)
+ * 
+ * Tầng 2: Khi phiên hết hạn, hệ thống âm thầm:
+ *   1. Xóa NextAuth session (KHÔNG redirect)
+ *   2. Xóa localStorage
+ *   3. Báo cho useAuth cập nhật giao diện (hiện nút Login)
+ * 
+ * ⚠️ KHÔNG dùng console.error, KHÔNG throw Error
+ *    → Tránh bảng đỏ Next.js Dev Overlay
+ */
+async function silentCleanup() {
+  try {
+    await signOut({ redirect: false })
+  } catch {
+    // Bỏ qua lỗi signOut — không quan trọng
+  }
+
+  // Xóa sạch cookie hết hạn trên trình duyệt
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    })
+  } catch {
+    // Bỏ qua
+  }
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('userId')
+    localStorage.removeItem('username')
+    localStorage.removeItem('email')
+    localStorage.removeItem('roles')
+    localStorage.removeItem('avatar')
+    // Báo cho useAuth biết user đã hết phiên → UI tự cập nhật
+    window.dispatchEvent(new Event('auth-user-change'))
+  }
+}
+
+/**
  * 🔄 Gọi API refresh để lấy access token mới
  * 
- * Gọi: POST /api/auth/refresh
- * Endpoint này sẽ:
- *   1. Lấy refreshToken từ HttpOnly cookie
- *   2. Gọi backend /auth/refresh-token
- *   3. Update cookies với token mới
+ * Tầng 1 + 2: Sliding Session + Silent Logout
+ * 
+ * Trả về:
+ *   - true  → Refresh thành công, cookie đã được cập nhật
+ *   - false → Refresh thất bại, đã dọn dẹp phiên êm thầm
+ * 
+ * ⚠️ Hàm này KHÔNG BAO GIỜ throw Error
+ *    → Tránh crash ứng dụng & bảng đỏ Next.js
  */
-async function refreshAccessToken() {
+async function refreshAccessToken(): Promise<boolean> {
   try {
-    console.log('🔄 Đang refresh token...')
-    
+    console.warn('🔄 Phiên đăng nhập đã hết hạn, đang thử gia hạn...')
+
     const res = await fetch('/api/auth/refresh', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     })
 
     if (!res.ok) {
-      // ❌ Refresh fail → logout user
-      console.error('❌ Refresh token thất bại, logout user...')
-      await signOut({ callbackUrl: '/login-page' })
-      throw new Error('Token refresh failed')
+      // Refresh thất bại → Đây là chuyện BÌNH THƯỜNG (phiên quá cũ)
+      // Xử lý êm thầm, KHÔNG báo lỗi
+      console.warn('ℹ️ Phiên đã hết hạn, chuyển sang chế độ khách vãng lai...')
+      await silentCleanup()
+      return false
     }
 
-    console.log('✅ Token refresh thành công!')
-    return res
-  } catch (error) {
-    console.error('❌ Lỗi khi refresh token:', error)
-    throw error
+    console.log('✅ Gia hạn phiên đăng nhập thành công!')
+    return true
+  } catch {
+    // Lỗi mạng hoặc server chết → cũng dọn dẹp êm thầm
+    console.warn('ℹ️ Không thể gia hạn phiên (lỗi kết nối), chuyển sang chế độ khách...')
+    await silentCleanup()
+    return false
   }
 }
 
 /**
  * 🎣 Wrapper chính cho fetch() với auto-refresh
  * 
+ * Tầng 1 + 2: Sliding Session + Silent Logout
+ * 
  * Cách hoạt động:
- *   1. Gọi API bình thường
+ *   1. Gửi request API bình thường
  *   2. Nếu 401 (token hết hạn):
  *      a. Nếu chưa refresh → gọi refreshAccessToken()
  *      b. Nếu đang refresh → chờ trong queue
- *   3. Update token mới
- *   4. Thử lại request
+ *   3. Nếu refresh thành công → thử lại request gốc
+ *   4. Nếu refresh thất bại → trả về response 401 bình thường
+ * 
+ * ⚠️ Hàm này KHÔNG BAO GIỜ throw Error khi token hết hạn
+ *    → Service layer sẽ kiểm tra res.ok và xử lý phù hợp
+ *    → React Query sẽ nhận error từ service, không từ đây
  */
 export async function apiFetch(
   url: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  try {
-    // 1️⃣ Gửi request đầu tiên
-    let response = await fetch(url, {
-      ...options,
-      credentials: 'include', // 🔒 Gửi cả cookies
-    })
+  // 1️⃣ Gửi request đầu tiên
+  let response = await fetch(url, {
+    ...options,
+    credentials: 'include', // 🔒 Gửi cả cookies
+  })
 
-    // 2️⃣ Kiểm tra: Token hết hạn? (401 Unauthorized)
-    if (response.status === 401) {
-      console.warn('⚠️ Token hết hạn (401), chuẩn bị refresh...')
+  // 2️⃣ Kiểm tra: Token hết hạn? (401 Unauthorized)
+  if (response.status === 401) {
+    console.warn('⚠️ Token hết hạn (401), chuẩn bị refresh...')
 
-      // 🚩 Kiểm tra: có đang refresh token không?
-      if (!isRefreshing) {
-        // ✅ Chưa refresh → Bắt đầu refresh
-        isRefreshing = true
-        console.log('🔄 Bắt đầu refresh token (request đầu tiên)')
+    // 🚩 Kiểm tra: có đang refresh token không?
+    if (!isRefreshing) {
+      // ✅ Chưa refresh → Bắt đầu refresh
+      isRefreshing = true
 
-        try {
-          // 🔄 Gọi API refresh token
-          await refreshAccessToken()
-          
-          // ✅ Refresh thành công → tắt cờ
-          isRefreshing = false
-          
-          // 📢 Thông báo cho tất cả request trong queue
-          processQueue(null)
+      const success = await refreshAccessToken()
+      isRefreshing = false
 
-          // 3️⃣ Thử lại request gốc với token mới
-          console.log('🔄 Thử lại request gốc...')
-          response = await fetch(url, {
-            ...options,
-            credentials: 'include',
-          })
-        } catch (error) {
-          // ❌ Refresh fail → tắt cờ
-          isRefreshing = false
-          
-          // 📢 Thông báo cho queue: lỗi rồi!
-          processQueue(error)
-          throw error
-        }
-      } else {
-        // ✅ Đang có request khác refresh → Đứng vào queue
-        console.log('⏳ Có request khác đang refresh, đứng vào queue...')
-        
-        return new Promise((resolve, reject) => {
-          // Thêm request hiện tại vào hàng đợi
-          failedRequestsQueue.push({
-            resolve: () => {
-              // 🔄 Khi nhận được thông báo → thử lại request
-              console.log('✅ Nhận được token mới từ queue, retry request...')
-              return fetch(url, {
-                ...options,
-                credentials: 'include',
-              }).then(resolve).catch(reject)
-            },
-            reject,
-          })
+      if (success) {
+        // ✅ Refresh thành công → thông báo cho queue và thử lại
+        processQueue(null)
+
+        // 3️⃣ Thử lại request gốc với token mới
+        response = await fetch(url, {
+          ...options,
+          credentials: 'include',
         })
+      } else {
+        // ❌ Refresh thất bại → thông báo cho queue
+        // Dùng null thay vì error → queue sẽ resolve bình thường
+        // Mỗi request trong queue tự retry và nhận 401 → service xử lý
+        processQueue(null)
+        // Trả về response 401 gốc — KHÔNG throw Error
+        // Service layer sẽ thấy res.ok === false và xử lý
       }
+    } else {
+      // ✅ Đang có request khác refresh → Đứng vào queue chờ
+      return new Promise((resolve, reject) => {
+        failedRequestsQueue.push({
+          resolve: () => {
+            // 🔄 Khi nhận được thông báo → thử lại request
+            return fetch(url, {
+              ...options,
+              credentials: 'include',
+            }).then(resolve).catch(reject)
+          },
+          reject,
+        })
+      })
     }
-
-    return response
-  } catch (error) {
-    console.error('❌ Lỗi API:', error)
-    throw error
   }
+
+  return response
 }
 
 /**

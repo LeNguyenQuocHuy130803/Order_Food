@@ -43,12 +43,12 @@ public enum OrderStatus {
      */
     public Set<OrderStatus> getAllowedTransitions() {
         return switch (this) {
-            case PENDING    -> EnumSet.of(PAID, CANCELLED);
+            case PENDING    -> EnumSet.of(PAID, CONFIRMED, CANCELLED);
             case PAID       -> EnumSet.of(CONFIRMED, CANCELLED);
             case CONFIRMED  -> EnumSet.of(PREPARING, CANCELLED);
             case PREPARING  -> EnumSet.of(READY, CANCELLED);
             case READY      -> EnumSet.of(DELIVERING, CANCELLED);
-            case DELIVERING -> EnumSet.of(DELIVERED);
+            case DELIVERING -> EnumSet.of(DELIVERED, PAID);
             case DELIVERED, CANCELLED -> EnumSet.noneOf(OrderStatus.class);
         };
     }

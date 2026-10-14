@@ -1,6 +1,5 @@
 import type { BlogPaginatedResponse, BlogPost } from "@/types/blog";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+import { apiFetch } from "@/lib/api/api-client-refresh";
 
 export const BlogService = {
   /**
@@ -12,11 +11,8 @@ export const BlogService = {
     console.log(`📰 [BlogService] Fetching blogs - page: ${page}, size: ${size}`);
     
     try {
-      const response = await fetch(`${API_URL}/blogs?page=${page}&size=${size}`, {
+      const response = await apiFetch(`/api/blogs?page=${page}&size=${size}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       if (!response.ok) {
@@ -40,11 +36,8 @@ export const BlogService = {
     console.log(`📄 [BlogService] Fetching blog detail - id: ${id}`);
     
     try {
-      const response = await fetch(`${API_URL}/blogs/${id}`, {
+      const response = await apiFetch(`/api/blogs/${id}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
       });
 
       if (!response.ok) {

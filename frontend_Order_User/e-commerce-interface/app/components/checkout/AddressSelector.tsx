@@ -13,17 +13,14 @@ import { useAddresses } from "@/hooks/useAddresses"
 
 const STORAGE_KEY = "checkout_selectedAddressId"
 
-export function AddressSelector() {
+interface AddressSelectorProps {
+  selectedAddressId: number | null
+  onSelectedAddressChange: (id: number | null) => void
+}
+
+export function AddressSelector({ selectedAddressId, onSelectedAddressChange }: AddressSelectorProps) {
   const { addresses, loading: addressesLoading, error: addressesError } = useAddresses() // ✅ Sửa: thêm loading + error
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedAddressId, setSelectedAddressIdState] = useState<number | null>(() => {
-    // ✅ Initialize from sessionStorage if available
-    if (typeof window !== 'undefined') {
-      const saved = sessionStorage.getItem(STORAGE_KEY)
-      return saved ? parseInt(saved, 10) : null
-    }
-    return null
-  })
   const [mounted, setMounted] = useState(false)
 
   // ✅ Load selectedAddressId from sessionStorage on mount
@@ -34,7 +31,7 @@ export function AddressSelector() {
 
   // ✅ Set selectedAddressId + save to sessionStorage
   const setSelectedAddressId = (id: number | null) => {
-    setSelectedAddressIdState(id)
+    onSelectedAddressChange(id)
     if (id !== null) {
       sessionStorage.setItem(STORAGE_KEY, id.toString())
     } else {

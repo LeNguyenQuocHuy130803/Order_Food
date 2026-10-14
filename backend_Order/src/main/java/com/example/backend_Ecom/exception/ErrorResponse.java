@@ -23,5 +23,6 @@ public class ErrorResponse {
     private String message;
     private List<String> details;
     private String path;
+    @com.fasterxml.jackson.annotation.JsonFormat(shape = com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS")
     private LocalDateTime timestamp;
 }

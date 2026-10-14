@@ -1,6 +1,7 @@
 package com.example.backend_Ecom.controller;
 
 import com.example.backend_Ecom.dto.CartItemRequestDto;
+import com.example.backend_Ecom.dto.UpdateCartItemRequestDto;
 import com.example.backend_Ecom.dto.CartResponseDto;
 import com.example.backend_Ecom.dto.MessageResponseDto;
 import com.example.backend_Ecom.security.UserPrincipal;
@@ -14,8 +15,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 
 @Tag(name = "Cart", description = "Shopping cart operations")
+@Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/carts")
@@ -47,9 +50,8 @@ public class CartController {
             @Valid @RequestBody CartItemRequestDto request) {
         return ResponseEntity.ok(cartService.addItemToCart(principal.getId(), request));
     }
-
     /**
-     * PATCH /api/carts/items/{cartItemId}?quantity=5
+     * PATCH /api/carts/items/{cartItemId}
      * ✅ Authenticated by SecurityConfig + JWT token
      * Cập nhật số lượng sản phẩm trong giỏ
      */
@@ -58,8 +60,8 @@ public class CartController {
     public ResponseEntity<CartResponseDto> updateCartItem(
             @AuthenticationPrincipal UserPrincipal principal,
             @Parameter(description = "Cart Item ID") @PathVariable @Min(value = 1, message = "Cart Item ID must be positive") Long cartItemId,
-            @Parameter(description = "New quantity") @RequestParam Integer quantity) {
-        return ResponseEntity.ok(cartService.updateCartItem(principal.getId(), cartItemId, quantity));
+            @Valid @RequestBody UpdateCartItemRequestDto request) {
+        return ResponseEntity.ok(cartService.updateCartItem(principal.getId(), cartItemId, request.getQuantity()));
     }
 
     /**

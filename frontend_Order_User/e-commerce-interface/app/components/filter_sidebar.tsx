@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Filter, SlidersHorizontal, Star } from 'lucide-react';
 import { Button } from './ui/button';
-import type { FilterParams } from '@/types/drink';
+import type { FilterParams } from '@/types/product';
 
 interface FilterSidebarProps {
   onFilterChange?: (filters: FilterParams) => void;
@@ -13,17 +13,8 @@ interface FilterSidebarProps {
 
 export function FilterSidebar({ onFilterChange, initialFilters, categories }: FilterSidebarProps) {
   // Filter state
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedFeatured, setSelectedFeatured] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (initialFilters) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedCategories(initialFilters.categories || []);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSelectedFeatured(initialFilters.featured || false);
-    }
-  }, [initialFilters]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => initialFilters?.categories || []);
+  const [selectedFeatured, setSelectedFeatured] = useState<boolean>(() => initialFilters?.featured || false);
 
   const handleCategoryClick = (category: string) => {
     const newCategories = selectedCategories.includes(category)

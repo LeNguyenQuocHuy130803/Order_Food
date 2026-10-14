@@ -21,4 +21,11 @@ public class AddressRequestDto {
     @Schema(description = "Is this the default address", example = "false")
     @Builder.Default
     private Boolean isDefault = false;
+
+    @Schema(description = "Phone number for delivery", example = "0912345678")
+    @jakarta.validation.constraints.Pattern(
+            regexp = "^(\\+84|0)[0-9]{9}$",
+            message = "Số điện thoại không hợp lệ"
+    )
+    private String phoneNumber;
 }

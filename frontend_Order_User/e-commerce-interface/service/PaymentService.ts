@@ -5,21 +5,42 @@ import {
   CapturePaymentResponse,
   PaymentHistoryDto,
   OrderCheckoutResponse,
+  CheckoutOrderRequest,
 } from '@/types/payment'
 
 const BASE_URL = '/api/payments'
 const ORDER_URL = '/api/orders'
 
 /**
- * Create PayPal order from cart (selected items)
+ * Create order from cart (checkout)
  */
-export async function checkoutOrder(shippingAddressId: number = 1, selectedItemIds?: number[]): Promise<OrderCheckoutResponse> {
+export async function checkoutOrder(
+  requestOrAddressId?: CheckoutOrderRequest | number,
+  selectedItemIds?: number[]
+): Promise<OrderCheckoutResponse> {
   try {
-    const payload = { 
-      shippingAddressId,
-      ...(selectedItemIds && selectedItemIds.length > 0 && { selectedItemIds })
+    let payload: {
+      addressType?: string
+      address?: string
+      notes?: string
+      cartItemIds?: number[]
+    } = {}
+
+    if (typeof requestOrAddressId === 'object' && requestOrAddressId !== null) {
+      payload = {
+        addressType: requestOrAddressId.addressType || 'HOME',
+        address: requestOrAddressId.address || 'Địa chỉ nhận hàng',
+        notes: requestOrAddressId.notes,
+        cartItemIds: requestOrAddressId.cartItemIds,
+      }
+    } else {
+      payload = {
+        addressType: 'HOME',
+        address: 'Địa chỉ nhận hàng',
+        cartItemIds: selectedItemIds,
+      }
     }
-    
+
     console.log('📡 PaymentService.checkoutOrder() called with:', payload)
 
     const res = await apiFetch(`${ORDER_URL}/checkout`, {
@@ -29,14 +50,15 @@ export async function checkoutOrder(shippingAddressId: number = 1, selectedItemI
     })
 
     console.log('📡 Response status:', res.status)
-    
+
     if (!res.ok) {
-      throw new Error('Failed to create order from cart')
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Failed to create order from cart')
     }
 
     const data = await res.json()
     console.log('📡 Order data received:', data)
-    
+
     return data
   } catch (error) {
     console.error('❌ checkoutOrder error:', error)

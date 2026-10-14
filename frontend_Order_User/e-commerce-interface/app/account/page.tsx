@@ -1,11 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { User, ShoppingBag, MapPin, Settings, LogOut, Edit } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/useAuth'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useRequireAuth } from '@/hooks/useRequireAuth'
 import { Header } from '@/app/components/layout/header'
 import { Footer } from '@/app/components/layout/footer'
 import { useUserDetail, useUpdateUserMutation } from '@/lib/api/queries'
@@ -14,10 +14,11 @@ import { ChangePasswordForm } from './ChangePasswordTab'
 import { OrdersTab } from './OrdersTab'
 import type { UserDetail } from '@/types/user'
 
-export default function AccountPage() {
+function AccountContent() {
   const router = useRouter()
-  const { user, loading, logout } = useAuth()
-  const [activeTab, setActiveTab] = useState('profile')
+  const searchParams = useSearchParams()
+  const { user, loading, logout } = useRequireAuth('/login-page')
+  const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'profile')
   const [isEditing, setIsEditing] = useState(false)
   const [avatarRefresh, setAvatarRefresh] = useState(0)
 
@@ -25,7 +26,7 @@ export default function AccountPage() {
   const { data: profile, isLoading: isLoadingProfile, error: queryError } = useUserDetail(user?.id ?? 0)
 
   // ✅ React Query - Tự động update cache on success
-  const { mutateAsync: updateUserMutation, isPending: isUpdatingProfile, error: updateError } = useUpdateUserMutation()
+  const { mutateAsync: updateUserMutation, isPending: isUpdatingProfile } = useUpdateUserMutation()
 
   const handleLogout = async () => {
     await logout()
@@ -50,8 +51,6 @@ export default function AccountPage() {
       console.error('❌ [AccountPage] Error updating profile:', (err as Error).message)
     }
   }
-
-
 
   if (loading || !user) {
     return (
@@ -370,5 +369,13 @@ export default function AccountPage() {
       </main>
       <Footer />
     </>
+  )
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+      <AccountContent />
+    </Suspense>
   )
 }

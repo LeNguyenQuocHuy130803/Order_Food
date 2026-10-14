@@ -21,6 +21,7 @@ public class Role {
     private Long id;
     private String name;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToMany(mappedBy = "roles")
     private List<User> users;
 }

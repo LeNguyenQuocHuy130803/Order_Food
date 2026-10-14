@@ -53,7 +53,7 @@ dependencies {
 
 	// Cloudinary for image upload
 	implementation 'com.cloudinary:cloudinary-http45:1.36.0'
-	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
+	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 
 	// Email sending
 	implementation 'org.springframework.boot:spring-boot-starter-mail'

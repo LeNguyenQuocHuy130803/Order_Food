@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { usePayment } from '@/hooks/usePayment'
 import { CreditCard } from 'lucide-react'
 import { CircleX } from 'lucide-react'
 
-export default function CheckoutPage() {
+function PaymentCheckoutContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const orderId = parseInt(searchParams.get('orderId') || '0')
@@ -138,5 +138,19 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <PaymentCheckoutContent />
+    </Suspense>
   )
 }

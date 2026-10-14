@@ -13,7 +13,7 @@ import { ResultsDisplay } from "@/app/components/product_page_ffdd/results-displ
 // ✨ Updated: Use React Query hook instead of manual state
 import { useFreshQuery } from "@/hooks/useFreshQuery";
 
-import type { FilterParams } from "@/types/drink";
+import type { FilterParams } from "@/types/product";
 
 import {
   parseUrlParamsToFilters,

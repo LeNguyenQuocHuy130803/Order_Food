@@ -22,7 +22,6 @@ import com.example.backend_Ecom.entity.Role;
 import com.example.backend_Ecom.security.JwtService;
 import com.example.backend_Ecom.security.UserPrincipal;
 
-
 import java.util.stream.Collectors;
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +37,6 @@ import org.springframework.data.domain.Pageable;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-@Transactional
 public class UserService {
     // Account Lockout Configuration
     private static final int MAX_LOGIN_ATTEMPTS = 5;
@@ -56,6 +54,7 @@ public class UserService {
     /**
      * Authenticate user with email and password
      */
+    @Transactional
     public LoginResponseDto login(LoginRequestDto request) {
         log.info("Login attempt for email: {}", request.getEmail());
 
@@ -71,12 +70,6 @@ public class UserService {
             throw new AppException(ErrorCode.ACCOUNT_LOCKED,
                     "Account is locked due to multiple failed login attempts. Please try again in " +
                             getMinutesUntilUnlock(user) + " minutes.");
-        }
-
-        // Check if email is verified
-        if (!user.getEmailVerified()) {
-            log.warn("Login failed: Email not verified for: {}", request.getEmail());
-            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED, "Please verify your email before logging in");
         }
 
         // Check if account status is active
@@ -115,8 +108,80 @@ public class UserService {
     }
 
     /**
+     * Social login (Google, Facebook, GitHub)
+     * Auto-creates user if not exists, or updates info and generates tokens
+     */
+    @Transactional
+    public LoginResponseDto socialLogin(SocialLoginRequestDto request) {
+        log.info("Social login attempt for email: {}, provider: {}", request.getEmail(), request.getProvider());
+
+        User user = userJpaRepository.findByEmail(request.getEmail()).orElse(null);
+
+        if (user == null) {
+            // Tạo mới user từ thông tin Google / Facebook
+            user = new User();
+            user.setRoles(new java.util.ArrayList<>());
+            user.setEmail(request.getEmail());
+            String displayName = (request.getName() != null && !request.getName().isBlank())
+                    ? request.getName()
+                    : request.getEmail().split("@")[0];
+            user.setUsername(displayName);
+            // Password ngẫu nhiên bảo mật cao để không ai đoán được
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            if (request.getAvatar() != null && !request.getAvatar().isBlank()) {
+                user.setAvatar(request.getAvatar());
+            }
+            user.setStatus(UserStatus.ACTIVE);
+            user.setEmailVerified(true);
+            user.setFailedLoginAttempts(0);
+            user.setIsAccountLocked(false);
+
+            // Gán role CUSTOMER mặc định
+            Role customerRole = roleRepository.findByName(RoleName.CUSTOMER.name())
+                    .orElseGet(() -> {
+                        log.warn("Role {} not found, auto-creating...", RoleName.CUSTOMER.name());
+                        Role newRole = new Role();
+                        newRole.setName(RoleName.CUSTOMER.name());
+                        return roleRepository.save(newRole);
+                    });
+            user.getRoles().add(customerRole);
+            user = userJpaRepository.save(user);
+            log.info("✓ Auto-created new user via OAuth: {}", user.getEmail());
+        } else {
+            // User đã tồn tại: cập nhật avatar nếu chưa có
+            if ((user.getAvatar() == null || user.getAvatar().isBlank()) && request.getAvatar() != null && !request.getAvatar().isBlank()) {
+                user.setAvatar(request.getAvatar());
+            }
+            if (user.getStatus() != UserStatus.ACTIVE) {
+                throw new AppException(ErrorCode.ACCOUNT_LOCKED, "Account is " + user.getStatus().getEnglishName().toLowerCase());
+            }
+            user.setIsAccountLocked(false);
+            user.setFailedLoginAttempts(0);
+        }
+
+        user.setLastLogin(LocalDateTime.now());
+        user = userJpaRepository.save(user);
+
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+
+        log.info("User logged in via OAuth successfully: {}", user.getEmail());
+
+        return LoginResponseDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toList()))
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    /**
      * Register new user
      */
+    @Transactional
     public RegisterResponseDto register(RegisterRequestDto request) {
         log.info("Registration attempt for email: {}", request.getEmail());
 
@@ -138,37 +203,21 @@ public class UserService {
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAvatar(request.getAvatar());
 
-        // Set email verification status and user status
-        user.setEmailVerified(false);
+        // Email verified by default - no verification step needed for e-commerce
+        user.setEmailVerified(true);
         user.setStatus(UserStatus.ACTIVE);
 
         user = this.userJpaRepository.save(user);
 
         Role customerRole = roleRepository.findByName(RoleName.CUSTOMER.name())
-                .orElseThrow(() -> {
-                    log.error("Role {} not found in database", RoleName.CUSTOMER.name());
-                    return new AppException(ErrorCode.ROLE_NOT_FOUND, "Role " + RoleName.CUSTOMER.name() + " not found");
+                .orElseGet(() -> {
+                    log.warn("Role {} not found in database, auto-creating it...", RoleName.CUSTOMER.name());
+                    Role newRole = new Role();
+                    newRole.setName(RoleName.CUSTOMER.name());
+                    return roleRepository.save(newRole);
                 });
         user.getRoles().add(customerRole);
         user = this.userJpaRepository.save(user);
-
-        // Generate OTP for email verification
-        String otp = otpService.generateOtp();
-        LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(10);
-
-        // Create verification token with HASHED OTP
-        VerificationToken verificationToken = new VerificationToken();
-        verificationToken.setUser(user);
-        verificationToken.setOtp(passwordEncoder.encode(otp)); // ĐÃ FIX
-        verificationToken.setOtpExpiry(otpExpiry);
-        verificationToken.setToken(UUID.randomUUID().toString());
-        verificationToken.setExpiryDate(LocalDateTime.now().plusHours(24)); // Token link expiry (if needed for email link)
-        verificationToken.setUsed(false);
-        verificationTokenRepository.save(verificationToken);
-
-        // Send verification email with PLAIN TEXT OTP
-        emailService.sendVerificationEmail(user.getEmail(), otp);
-        log.info("Verification OTP sent to: {} | OTP: {}", user.getEmail(), otp);
 
         log.info("User registered successfully: {}", request.getEmail());
 
@@ -177,77 +226,16 @@ public class UserService {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .accessToken(null) // No token until email is verified
+                .accessToken(null)
                 .roles(user.getRoles().stream().map(r -> r.getName()).collect(Collectors.toList()))
                 .build();
-    }
-
-    /**
-     * Verify user email using OTP
-     * @param request VerifyEmailRequestDto containing email and OTP
-     * @return UserResponseDto with updated verification status
-     */
-    public UserResponseDto verifyEmail(VerifyEmailRequestDto request) {
-        log.info("Email verification request for: {}", request.getEmail());
-
-        // Find user by email
-        User user = userJpaRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> {
-                    log.warn("Email verification failed: User not found for email: {}", request.getEmail());
-                    return new AppException(ErrorCode.USER_NOT_FOUND, "User not found");
-                });
-
-        // Check if email is already verified
-        if (user.getEmailVerified()) {
-            log.warn("Email verification failed: Email already verified for user: {}", request.getEmail());
-            throw new AppException(ErrorCode.APP_EXCEPTION, "Email is already verified");
-        }
-
-        // Validate OTP format
-        if (!otpService.isValidOtpFormat(request.getOtp())) {
-            log.warn("Email verification failed: Invalid OTP format for user: {}", request.getEmail());
-            throw new AppException(ErrorCode.INVALID_TOKEN, "Invalid OTP format. OTP must be 6 digits");
-        }
-
-        // Find active verification token for user
-        VerificationToken verificationToken = verificationTokenRepository.findByUserIdAndUsedFalse(user.getId())
-                .orElseThrow(() -> {
-                    log.warn("Email verification failed: No active verification token for user: {}", request.getEmail());
-                    return new AppException(ErrorCode.INVALID_TOKEN, "No active verification token found");
-                });
-
-        // Check if OTP has expired
-        if (verificationToken.isOtpExpired()) {
-            log.warn("Email verification failed: OTP expired for user: {}", request.getEmail());
-            throw new AppException(ErrorCode.INVALID_TOKEN, "OTP has expired. Please request a new OTP");
-        }
-
-        // Validate OTP matches (USING BCRYPT MATCHES)
-        if (!passwordEncoder.matches(request.getOtp(), verificationToken.getOtp())) { // ĐÃ FIX
-            log.warn("Email verification failed: Invalid OTP for user: {}", request.getEmail());
-            throw new AppException(ErrorCode.INVALID_TOKEN, "Invalid OTP. Please try again");
-        }
-
-        // Mark email as verified
-        user.setEmailVerified(true);
-        user = userJpaRepository.save(user);
-
-        // Mark verification token as used
-        verificationToken.setUsed(true);
-        verificationTokenRepository.save(verificationToken);
-
-        // Send success email
-        emailService.sendVerificationSuccessEmail(user.getEmail());
-        log.info("Email verified successfully for user: {}", user.getEmail());
-
-        // Return updated user data
-        return mapToDto(user);
     }
 
     /**
      * Request password reset via OTP sent to email
      * @param request ForgotPasswordRequestDto containing email
      */
+    @Transactional
     public void forgotPassword(ForgotPasswordRequestDto request) {
         log.info("Forgot password request for: {}", request.getEmail());
 
@@ -273,7 +261,7 @@ public class UserService {
         // Create new password reset token with HASHED OTP
         VerificationToken resetToken = new VerificationToken();
         resetToken.setUser(user);
-        resetToken.setOtp(passwordEncoder.encode(otp)); // ĐÃ FIX
+        resetToken.setOtp(passwordEncoder.encode(otp));
         resetToken.setOtpExpiry(otpExpiry);
         resetToken.setToken(UUID.randomUUID().toString());
         resetToken.setExpiryDate(LocalDateTime.now().plusHours(24));
@@ -282,13 +270,14 @@ public class UserService {
 
         // Send password reset email with PLAIN TEXT OTP
         emailService.sendPasswordResetEmail(user.getEmail(), otp);
-        log.info("Password reset OTP sent to: {} | OTP: {}", user.getEmail(), otp);
+        log.info("Password reset OTP sent to: {}", user.getEmail());
     }
 
     /**
      * Reset password using OTP verification
      * @param request ResetPasswordRequestDto containing email, OTP, and new password
      */
+    @Transactional
     public void resetPassword(ResetPasswordRequestDto request) {
         log.info("Password reset request for: {}", request.getEmail());
 
@@ -309,7 +298,7 @@ public class UserService {
         VerificationToken resetToken = verificationTokenRepository.findByUserIdAndUsedFalse(user.getId())
                 .orElseThrow(() -> {
                     log.warn("Password reset failed: No active reset token for user: {}", request.getEmail());
-                    throw new AppException(ErrorCode.INVALID_TOKEN, "No active password reset token found");
+                    return new AppException(ErrorCode.INVALID_TOKEN, "No active password reset token found");
                 });
 
         // Check if OTP has expired
@@ -319,7 +308,7 @@ public class UserService {
         }
 
         // Validate OTP matches (USING BCRYPT MATCHES)
-        if (!passwordEncoder.matches(request.getOtp(), resetToken.getOtp())) { // ĐÃ FIX
+        if (!passwordEncoder.matches(request.getOtp(), resetToken.getOtp())) {
             log.warn("Password reset failed: Invalid OTP for user: {}", request.getEmail());
             throw new AppException(ErrorCode.INVALID_TOKEN, "Invalid OTP. Please try again");
         }
@@ -328,7 +317,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         user.setIsAccountLocked(false);
         user.setFailedLoginAttempts(0);
-        user = userJpaRepository.save(user);
+        userJpaRepository.save(user);
 
         // Mark reset token as used
         resetToken.setUsed(true);
@@ -342,18 +331,19 @@ public class UserService {
     /**
      * Refresh access token using refresh token
      */
+    @Transactional(readOnly = true)
     public RefreshTokenResponseDto refreshToken(RefreshTokenRequestDto request) {
         log.info("Refresh token request");
 
         String refreshToken = request.getRefreshToken();
-        String email = jwtService.extractEmail(refreshToken);  // Extract email from token
+        String email = jwtService.extractEmail(refreshToken);
 
         if (email == null) {
             log.warn("Refresh token failed: Invalid token format");
             throw new AppException(ErrorCode.INVALID_TOKEN, "Invalid refresh token format");
         }
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);  // Load user by email
+        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
         if (!jwtService.isRefreshTokenValid(refreshToken, userDetails)) {
             log.warn("Refresh token failed: Token validation failed for user: {}", email);
@@ -433,7 +423,6 @@ public class UserService {
 
     /**
      * Unlock a locked account
-     * @param user User entity
      */
     private void unlockAccount(User user) {
         user.setIsAccountLocked(false);
@@ -457,12 +446,13 @@ public class UserService {
         LocalDateTime lockoutExpiry = user.getLockoutTime().plus(LOCKOUT_DURATION_MINUTES, ChronoUnit.MINUTES);
 
         long minutesRemaining = ChronoUnit.MINUTES.between(now, lockoutExpiry);
-        return Math.max(minutesRemaining, 1); // Minimum 1 minute
+        return Math.max(minutesRemaining, 1);
     }
 
     /**
      * Get all users (non-paginated)
      */
+    @Transactional(readOnly = true)
     public List<UserResponseDto> getAllUsers() {
         log.info("Fetching all users");
         return userJpaRepository.findAll()
@@ -474,6 +464,7 @@ public class UserService {
     /**
      * Get all users with pagination
      */
+    @Transactional(readOnly = true)
     public PaginatedUserResponseDto getAllUsersPaginated(int page, int size) {
         if (page < 1) page = 1;
         if (size < 1) size = 10;
@@ -489,10 +480,10 @@ public class UserService {
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
 
-        // Tạo response DTO với thông tin phân trang (convert back to 1-based for response)
+        // Tạo response DTO với thông tin phân trang
         return PaginatedUserResponseDto.builder()
                 .data(userDtos)
-                .pageNumber(userPage.getNumber() + 1)  // Convert back to 1-based
+                .pageNumber(userPage.getNumber() + 1)
                 .pageSize(userPage.getSize())
                 .totalRecords(userPage.getTotalElements())
                 .totalPages(userPage.getTotalPages())
@@ -504,6 +495,7 @@ public class UserService {
     /**
      * Get user by ID
      */
+    @Transactional(readOnly = true)
     public UserResponseDto getUserById(Long id, UserPrincipal currentUser) {
         validateUserAccess(id, currentUser);
 
@@ -515,6 +507,7 @@ public class UserService {
     /**
      * Update user information
      */
+    @Transactional
     public UserResponseDto updateUser(Long id, UserUpdateRequestDto request, UserPrincipal currentUser) {
         validateUserAccess(id, currentUser);
         log.info("Updating user: {}", id);
@@ -537,7 +530,7 @@ public class UserService {
 
         if (request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank()) {
             // Check if phone number is already used by another user
-            if (!user.getPhoneNumber().equals(request.getPhoneNumber()) &&
+            if ((user.getPhoneNumber() == null || !user.getPhoneNumber().equals(request.getPhoneNumber())) &&
                     userJpaRepository.existsByPhoneNumber(request.getPhoneNumber())) {
                 throw new AppException(ErrorCode.PHONE_ALREADY_EXISTS, "Phone number already exists");
             }
@@ -585,8 +578,53 @@ public class UserService {
     }
 
     /**
-     * Change user password and return a simple success response
+     * Send OTP to user's email for change password verification
      */
+    @Transactional
+    public MessageResponseDto sendChangePasswordOtp(Long id) {
+        log.info("Sending change password OTP for user ID: {}", id);
+
+        User user = userJpaRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.warn("Send OTP failed: User not found with ID: {}", id);
+                    return new AppException(ErrorCode.USER_NOT_FOUND, "User not found with ID: " + id);
+                });
+
+        // Invalidate any existing unused tokens
+        verificationTokenRepository.findByUserIdAndUsedFalse(user.getId())
+                .ifPresent(token -> {
+                    token.setUsed(true);
+                    verificationTokenRepository.save(token);
+                });
+
+        // Generate OTP
+        String otp = otpService.generateOtp();
+        LocalDateTime otpExpiry = LocalDateTime.now().plusMinutes(5);
+
+        // Create verification token with HASHED OTP
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setUser(user);
+        verificationToken.setOtp(passwordEncoder.encode(otp));
+        verificationToken.setOtpExpiry(otpExpiry);
+        verificationToken.setToken(UUID.randomUUID().toString());
+        verificationToken.setExpiryDate(LocalDateTime.now().plusHours(1));
+        verificationToken.setUsed(false);
+        verificationTokenRepository.save(verificationToken);
+
+        // Send OTP email
+        emailService.sendChangePasswordOtpEmail(user.getEmail(), otp);
+        log.info("Change password OTP sent to: {}", user.getEmail());
+
+        return MessageResponseDto.builder()
+                .success(true)
+                .message("Mã OTP đã được gửi đến email " + user.getEmail())
+                .build();
+    }
+
+    /**
+     * Change user password with OTP verification
+     */
+    @Transactional
     public ChangePassResponseDto changePassword(Long id, ChangePassRequestDto request) {
         log.info("Changing password for user ID: {}", id);
 
@@ -597,24 +635,49 @@ public class UserService {
                     return new AppException(ErrorCode.USER_NOT_FOUND, "User not found with ID: " + id);
                 });
 
-        // 2. Kiểm tra mật khẩu cũ (BCrypt so sánh)
+        // 2. Xác thực OTP
+        if (!otpService.isValidOtpFormat(request.getOtp())) {
+            log.warn("Change password failed: Invalid OTP format for user: {}", user.getEmail());
+            throw new AppException(ErrorCode.INVALID_TOKEN, "OTP phải có 6 chữ số");
+        }
+
+        VerificationToken verificationToken = verificationTokenRepository.findByUserIdAndUsedFalse(user.getId())
+                .orElseThrow(() -> {
+                    log.warn("Change password failed: No active OTP for user: {}", user.getEmail());
+                    return new AppException(ErrorCode.INVALID_TOKEN, "Không tìm thấy mã OTP. Vui lòng gửi lại mã");
+                });
+
+        if (verificationToken.isOtpExpired()) {
+            log.warn("Change password failed: OTP expired for user: {}", user.getEmail());
+            throw new AppException(ErrorCode.INVALID_TOKEN, "Mã OTP đã hết hạn. Vui lòng gửi lại mã mới");
+        }
+
+        if (!passwordEncoder.matches(request.getOtp(), verificationToken.getOtp())) {
+            log.warn("Change password failed: Invalid OTP for user: {}", user.getEmail());
+            throw new AppException(ErrorCode.INVALID_TOKEN, "Mã OTP không đúng. Vui lòng thử lại");
+        }
+
+        // 3. Kiểm tra mật khẩu cũ (BCrypt so sánh)
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             log.warn("Change password failed: Incorrect old password for user: {}", user.getEmail());
             throw new AppException(ErrorCode.INVALID_CREDENTIALS, "Mật khẩu cũ không chính xác");
         }
 
-        // 3. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+        // 4. Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
             throw new AppException(ErrorCode.INVALID_REQUEST, "Mật khẩu mới không được trùng với mật khẩu cũ");
         }
 
-        // 4. Mã hóa mật khẩu mới và lưu
+        // 5. Mã hóa mật khẩu mới và lưu
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-
         user.setIsAccountLocked(false);
         user.setFailedLoginAttempts(0);
+        userJpaRepository.save(user);
 
-        user = userJpaRepository.save(user);
+        // 6. Đánh dấu OTP đã sử dụng
+        verificationToken.setUsed(true);
+        verificationTokenRepository.save(verificationToken);
+
         log.info("Password changed successfully for user: {}", user.getEmail());
 
         return new ChangePassResponseDto("Đổi mật khẩu thành công", true);
@@ -640,6 +703,7 @@ public class UserService {
                                         .id(address.getId())
                                         .type(address.getType())
                                         .address(address.getAddress())
+                                        .phoneNumber(address.getPhoneNumber())
                                         .isDefault(address.getIsDefault())
                                         .createdAt(address.getCreatedAt())
                                         .updatedAt(address.getUpdatedAt())

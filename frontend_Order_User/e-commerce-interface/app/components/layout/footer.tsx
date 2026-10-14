@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { 
-  Clock, Facebook, Instagram, MapPin, 
+  Facebook, Instagram, MapPin,
   Phone, Twitter, Youtube, Mail, ChevronRight 
 } from 'lucide-react';
 

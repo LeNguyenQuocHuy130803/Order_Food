@@ -5,8 +5,17 @@ import { useState } from "react";
 import Image from "next/image";
 import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
+import type { CartItem as CartItemData } from "@/types/cart";
 
-export function CartItem({ item, isSelected, onToggle, onUpdate, onDelete }: any) {
+interface CartItemProps {
+  item: CartItemData;
+  isSelected: boolean;
+  onToggle: (id: number) => void;
+  onUpdate: (id: number, quantity: number) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
+}
+
+export function CartItem({ item, isSelected, onToggle, onUpdate, onDelete }: CartItemProps) {
   const [localQty, setLocalQty] = useState(item.quantity);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -17,8 +26,8 @@ export function CartItem({ item, isSelected, onToggle, onUpdate, onDelete }: any
     setError("");
     try {
       await onUpdate(item.id, newQty);
-    } catch (err: any) {
-      setError(err.message || "Lỗi");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Lỗi");
       setLocalQty(item.quantity); // Revert nếu lỗi
     } finally {
       setIsUpdating(false);

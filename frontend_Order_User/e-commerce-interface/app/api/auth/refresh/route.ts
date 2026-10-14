@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         httpOnly: true,
         secure: false,  // 🔧 DEV: localhost HTTP không HTTPS, nên false
         sameSite: 'lax',
-        maxAge: 7 * 24 * 3600,
+        maxAge: 30 * 24 * 3600, // 30 ngày — Tầng 1: Sliding Session
         path: '/',
       })
     }

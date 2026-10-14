@@ -8,7 +8,7 @@ import {
   capturePaypalOrder,
   getPaymentHistory,
 } from '@/service/PaymentService'
-import { PaymentHistoryDto, OrderCheckoutResponse, CreatePaymentResponse, CapturePaymentResponse } from '@/types/payment'
+import { PaymentHistoryDto, OrderCheckoutResponse, CreatePaymentResponse, CapturePaymentResponse, CheckoutOrderRequest } from '@/types/payment'
 
 /**
  * Hook to manage payment flow
@@ -18,9 +18,14 @@ export function usePayment() {
   const [success, setSuccess] = useState(false)
 
   // Checkout mutation
-  const checkoutMutation = useMutation<OrderCheckoutResponse, Error, { shippingAddressId?: number; selectedItemIds?: number[] }>({
-    mutationFn: (params?: { shippingAddressId?: number; selectedItemIds?: number[] }) => 
-      checkoutOrder(params?.shippingAddressId, params?.selectedItemIds),
+  const checkoutMutation = useMutation<OrderCheckoutResponse, Error, CheckoutOrderRequest | { shippingAddressId?: number; selectedItemIds?: number[] } | undefined>({
+    mutationFn: (params) => {
+      if (params && ('address' in params || 'addressType' in params || 'cartItemIds' in params)) {
+        return checkoutOrder(params as CheckoutOrderRequest)
+      }
+      const legacyParams = params as { shippingAddressId?: number; selectedItemIds?: number[] } | undefined
+      return checkoutOrder(legacyParams?.shippingAddressId, legacyParams?.selectedItemIds)
+    },
     onSuccess: () => {
       console.log('✅ Checkout success')
       setError(null)

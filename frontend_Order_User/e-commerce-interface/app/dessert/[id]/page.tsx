@@ -3,14 +3,13 @@
 import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
-import { Heart, ArrowLeft, ShoppingCart, Star, Loader2, Minus, Plus } from "lucide-react";
+import { Heart, ArrowLeft, ShoppingCart, Star, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion"; // Đảm bảo đã cài: npm install framer-motion
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { Dessert } from "@/types/dessert";
-import { dessertService } from "@/service/DessertService";
+import type { Product } from "@/service/ProductService";
+import { ProductService } from "@/service/ProductService";
 import { CartService } from "@/service/CartService";
 import { Header } from "@/app/components/layout/header";
 import { Footer } from "@/app/components/layout/footer";
@@ -35,9 +34,9 @@ export default function DessertDetailPage() {
     data: dessert,
     isLoading,
     error,
-  } = useQuery<Dessert, Error>({
+  } = useQuery<Product, Error>({
     queryKey: ["dessert", dessertId],
-    queryFn: () => dessertService.getDessertById(dessertId),
+    queryFn: () => ProductService.getProductById(dessertId),
     enabled: isValidId,
   });
 
@@ -125,7 +124,7 @@ export default function DessertDetailPage() {
             >
               <div className="relative aspect-square w-full max-w-[480px] rounded-[3rem] overflow-hidden shadow-xl border border-gray-50 group">
                 <Image
-                  src={dessert.imageUrl}
+                  src={dessert.imageUrl || "/image/placeholder.jpg"}
                   alt={dessert.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-1000"

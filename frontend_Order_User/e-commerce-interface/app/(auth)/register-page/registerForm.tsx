@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FaGoogle, FaGithub, FaEye, FaEyeSlash } from 'react-icons/fa'
 import { registerUser } from '@/service/RegisterService'
+import { signIn } from 'next-auth/react'
 
 export default function RegisterForm() {
   const router = useRouter()
@@ -47,7 +48,7 @@ export default function RegisterForm() {
       setSuccess(true)
 
       setTimeout(() => {
-        router.push('/dashboard-employers')
+        router.push('/login-page')
       }, 2000)
     } catch (err: unknown) {
       setError((err as Error).message || 'Registration failed. Please try again.')
@@ -284,7 +285,11 @@ export default function RegisterForm() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-4">
-            <button className="w-full bg-white border border-gray-300 hover:border-[#ff5528] hover:bg-orange-50 text-gray-700 font-semibold py-2 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md">
+            <button
+              type="button"
+              onClick={() => signIn('google', { callbackUrl: '/' })}
+              className="w-full bg-white border border-gray-300 hover:border-[#ff5528] hover:bg-orange-50 text-gray-700 font-semibold py-2 rounded-lg flex items-center justify-center gap-2 shadow-sm hover:shadow-md cursor-pointer transition"
+            >
               <FaGoogle className="w-5 h-5 text-[#4285F4]" />
               <span className="text-sm">Google</span>
             </button>

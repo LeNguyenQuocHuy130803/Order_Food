@@ -1,4 +1,4 @@
-import type { FilterParams } from "@/types/drink";
+import type { FilterParams } from "@/types/product";
 
 /**
  hàm ở dưới làm chức năng như sau chuyển đổi thông tin từ url mà pử file page.tsx để lên url khi người dùng chọn flider ở sidebar, 
